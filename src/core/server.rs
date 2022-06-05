@@ -72,8 +72,6 @@ fn handle_connection(logfile: &Option<File>, mut stream: TcpStream) {
         ),
     };
 
-    println!("{}", response);
-
     stream.write(response.as_bytes()).unwrap();
     stream.flush().unwrap();
 }
