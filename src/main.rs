@@ -1,4 +1,5 @@
 mod configuration;
+mod constants;
 mod core;
 
 use crate::core::server::start_server;
