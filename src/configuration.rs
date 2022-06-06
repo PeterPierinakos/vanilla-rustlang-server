@@ -14,8 +14,8 @@ ABSOLUTE_STATIC_CONTENT_PATH/
 So, inside the static folder you have provided there must be an "html" and "css" folder and you have to place the static files accordingly.
 */
 
-pub const ABSOLUTE_STATIC_CONTENT_PATH: &str = "/var/www/static/";
-pub const ABSOLUTE_LOGS_PATH: &str = "/var/www/logs/";
+pub const ABSOLUTE_STATIC_CONTENT_PATH: &str = "/var/www/static";
+pub const ABSOLUTE_LOGS_PATH: &str = "/var/www/logs";
 pub const ADDR: &str = "127.0.0.1";
 pub const PORT: u32 = 80;
 pub const SAVE_LOGS: bool = true;
