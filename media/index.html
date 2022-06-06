@@ -14,6 +14,19 @@
       it inside the static files directory you have specified in your
       configuration file.
     </p>
+    <h2>Why VRS?</h2>
+    <p>
+      VRS is way more efficient with RAM usage than most of the other static web
+      servers which aren't written in Rust. Additionally, it doesn't use any
+      dependencies whatsoever for better compile times. It's especially
+      recommended to try on older hardware and see how it performs with or
+      without multithreading.
+    </p>
+    <p>
+      If you wish to do anything besides GET requests, then you should look for
+      another lightweight web server as this project's only purpose is to serve
+      static HTML.
+    </p>
     <h2>Useful Resources</h2>
     <ul>
       <li>
