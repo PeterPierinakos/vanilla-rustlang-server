@@ -12,7 +12,7 @@ use std::{
     net::{TcpListener, TcpStream},
 };
 
-fn async_handle_connection(mut stream: TcpStream) {
+fn multithread_handle_connection(mut stream: TcpStream) {
     let mut buf = [0; 1024];
 
     stream.read(&mut buf).unwrap();
@@ -119,7 +119,7 @@ pub fn start_server(unixtime: u64) {
     for stream in listener.incoming() {
         let stream = stream.unwrap();
 
-        if ASYNC {
+        if MULTITHREADING {
             handle_thread(stream);
         } else {
             handle_sync_connection(&logfile, stream)
@@ -129,6 +129,6 @@ pub fn start_server(unixtime: u64) {
 
 pub fn handle_thread(stream: TcpStream) {
     thread::spawn(|| {
-        async_handle_connection(stream);
+        multithread_handle_connection(stream);
     });
 }
