@@ -1,6 +1,7 @@
 use crate::configuration::*;
 use crate::constants::*;
 use crate::core::time::generate_unixtime;
+use crate::structs::uri::URI;
 use std::io::Write;
 use std::str;
 use std::{fs, fs::File, fs::OpenOptions};
@@ -8,6 +9,7 @@ use std::{
     io::Read,
     net::{TcpListener, TcpStream},
 };
+use crate::util::response::*;
 
 fn handle_connection(logfile: &Option<File>, mut stream: TcpStream) {
     let mut buf = [0; 1024];
@@ -30,46 +32,31 @@ fn handle_connection(logfile: &Option<File>, mut stream: TcpStream) {
     }
 
     if !buf.starts_with(GET) {
-        let page_400 = fs::read_to_string(format!("{}html/400.html", ABSOLUTE_STATIC_CONTENT_PATH))
-            .expect(
-                format!(
-                    "400 HTML page doesn't exist ('{}html/400.html')",
-                    ABSOLUTE_STATIC_CONTENT_PATH
-                )
-                .as_str(),
-            );
-        let response = format!(
-            "HTTP/1.1 400 Bad Request\r\nContent-Length: {}\r\n\r\n{}",
-            page_400.len(),
-            page_400
-        );
+        let response = response_400();
         stream.write(response.as_bytes()).unwrap();
         stream.flush().unwrap();
         return;
     }
 
-    let page_404_content =
-        fs::read_to_string(format!("{}html/404.html", ABSOLUTE_STATIC_CONTENT_PATH)).expect(
-            format!(
-                "404 HTML page doesn't exist ('{}html/400.html')",
-                ABSOLUTE_STATIC_CONTENT_PATH
-            )
-            .as_str(),
-        );
+    let mut uri = URI::new();
 
-    let requested_content =
-        fs::read_to_string(format!("{}html/index.html", ABSOLUTE_STATIC_CONTENT_PATH));
+    uri.find(&str::from_utf8(&buf).unwrap().to_string());
+
+    if uri.get() == &None {
+        let response = response_400();
+        stream.write(response.as_bytes()).unwrap();
+        stream.flush().unwrap();
+        return;
+    };
+
+    let requested_content = fs::read_to_string(format!(
+        "{}/html/{}",
+        ABSOLUTE_STATIC_CONTENT_PATH,
+        uri.get().clone().unwrap()
+    ));
     let response = match requested_content {
-        Ok(file) => format!(
-            "HTTP/1.1 200 OK\r\nContent-Length: {}\r\n\r\n{}",
-            file.len(),
-            file
-        ),
-        Err(_err) => format!(
-            "HTTP/1.1 404 Not Found\r\nContent-Length: {}\r\n\r\n{}",
-            page_404_content.len(),
-            page_404_content
-        ),
+        Ok(file) => response_success(file), 
+        Err(_err) => response_404(),
     };
 
     stream.write(response.as_bytes()).unwrap();
@@ -84,7 +71,7 @@ pub fn start_server(unixtime: u64) {
             OpenOptions::new()
                 .append(true)
                 .create(true)
-                .open(format!("{}{}.txt", ABSOLUTE_LOGS_PATH, unixtime))
+                .open(format!("{}/{}.txt", ABSOLUTE_LOGS_PATH, unixtime))
                 .expect("Unable to open logs"),
         )
     } else {
