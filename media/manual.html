@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Vanilla-RustLang-Server - User Manual</title>
+    <style>
+      .var {
+        color: brown;
+      }
+
+      .true {
+        color: green;
+      }
+
+      .false {
+        color: red;
+      }
+
+      .type {
+        color: purple;
+      }
+    </style>
+  </head>
+  <body>
+    <h1>Vanilla-RustLang-Server - User Manual</h1>
+    <hr />
+    <h2>1. Server configuration</h2>
+    <p>
+      Note: all the server configuration variables are inside
+      src/configuration.rs.
+    </p>
+    <ol>
+      <li>
+        <div>
+          <strong class="var">ABSOLUTE_STATIC_CONTENT_PATH</strong>
+          <p>
+            Used to specify the directory in which you have stored the static
+            HTML files.
+          </p>
+          <p>Required: <span class="true">true</span></p>
+          <p>Depends on: None</p>
+          <p>Type: <span class="type">String</span></p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong class="var">ABSOLUTE_LOGS_PATH</strong>
+          <p>
+            Used to specify the directory in which the server will store the
+            logs. Only necessary if you set
+            <span class="var">SAVE_LOGS</span> to true.
+          </p>
+          <p>
+            Required:
+            <span class="true">true</span> /
+            <span class="false">false</span>
+          </p>
+          <p>Depends on: <span class="var">SAVE_LOGS</span></p>
+          <p>Type: <span class="type">String</span></p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong class="var">ADDR</strong>
+          <p>
+            The adress which the server will use. Leave it to 127.0.0.1 for
+            localhost. Change it to 0.0.0.0 for production.
+          </p>
+          <p>Required: <span class="true">true</span></p>
+          <p>Depends on: None</p>
+          <p>Type: <span class="type">String</span></p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong class="var">PORT</strong>
+          <p>
+            The port which will be used by the server. The default port for HTTP
+            (Hyper Text Transfer Protocol) is 80 and for HTTPS (Hyper Text
+            Transfer Protocol Secure) 443.
+          </p>
+          <p>Required: <span class="true">true</span></p>
+          <p>Depends on: None</p>
+          <p>Type: <span class="type">Number</span></p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong class="var">SAVE_LOGS</strong>
+          <p>
+            Specifies whether you want the server to save logs upon a new
+            request.
+          </p>
+          <p>Required: <span class="true">true</span></p>
+          <p>Depends on: None</p>
+          <p>Type: <span class="type">Boolean</span></p>
+        </div>
+      </li>
+      <li>
+        <div>
+          <strong class="var">MULTITHREADING</strong>
+          <p>
+            Specifies whether you want to use multiple threads (faster) or a
+            single thread (slower).
+          </p>
+          <strong>
+            PRODUCTION WARNING: LOGS ARENT SAVED EVEN IF THEY ARE ENABLED WHEN
+            MULTITHREADING IS IN USE
+          </strong>
+          <p>Required: <span class="true">true</span></p>
+          <p>Depends on: None</p>
+          <p>Type: <span class="type">Boolean</span></p>
+        </div>
+      </li>
+    </ol>
+    <hr />
+    <h2>2. Adding static files</h2>
+    <h3>Steps for adding static files</h3>
+    <ol>
+      <li>Create your static files in the ./media/ directory</li>
+      <li>Run setup.sh (root access might be necessary)</li>
+      <li>
+        Specify the directory for your static files (should be the same as the
+        <span class="var">ABSOLUTE_STATIC_CONTENT_PATH</span>)
+      </li>
+      <li>Run the rest of the script (or exit)</li>
+    </ol>
+    <hr />
+    <h2>3. FAQ</h2>
+    <ol>
+      <li>
+        <div>
+          <h3>Is this production ready?</h3>
+          <p>
+            I do not see any problem using this web server for production as the
+            only thing it does is serve HTML and static files.
+          </p>
+          <h3>What is this project licensed under?</h3>
+          <p>GPL v3.0.</p>
+        </div>
+      </li>
+    </ol>
+  </body>
+</html>
