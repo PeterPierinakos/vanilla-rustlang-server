@@ -5,7 +5,6 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Vanilla-RustLang-Server - User Manual</title>
-    <script type="text/javascript" src="load.js"></script>
   </head>
   <body>
     <h1>Vanilla-RustLang-Server - User Manual</h1>
@@ -18,73 +17,68 @@
     <ol>
       <li>
         <div>
-          <strong class="var">ABSOLUTE_STATIC_CONTENT_PATH</strong>
+          <strong>ABSOLUTE_STATIC_CONTENT_PATH</strong>
           <p>
             Used to specify the directory in which you have stored the static
             HTML files.
           </p>
-          <p>Required: <span class="true">true</span></p>
+          <p>Required: true</p>
           <p>Depends on: None</p>
-          <p>Type: <span class="type">String</span></p>
+          <p>Type: String</p>
         </div>
       </li>
       <li>
         <div>
-          <strong class="var">ABSOLUTE_LOGS_PATH</strong>
+          <strong>ABSOLUTE_LOGS_PATH</strong>
           <p>
             Used to specify the directory in which the server will store the
-            logs. Only necessary if you set
-            <span class="var">SAVE_LOGS</span> to true.
+            logs. Only necessary if you set SAVE_LOGS to true.
           </p>
-          <p>
-            Required:
-            <span class="true">true</span> /
-            <span class="false">false</span>
-          </p>
+          <p>Required: true / false</p>
           <p>Depends on: <span class="var">SAVE_LOGS</span></p>
-          <p>Type: <span class="type">String</span></p>
+          <p>Type: String</p>
         </div>
       </li>
       <li>
         <div>
-          <strong class="var">ADDR</strong>
+          <strong>ADDR</strong>
           <p>
             The adress which the server will use. Leave it to 127.0.0.1 for
             localhost. Change it to 0.0.0.0 for production.
           </p>
-          <p>Required: <span class="true">true</span></p>
+          <p>Required: true</p>
           <p>Depends on: None</p>
-          <p>Type: <span class="type">String</span></p>
+          <p>Type: String</p>
         </div>
       </li>
       <li>
         <div>
-          <strong class="var">PORT</strong>
+          <strong>PORT</strong>
           <p>
             The port which will be used by the server. The default port for HTTP
             (Hyper Text Transfer Protocol) is 80 and for HTTPS (Hyper Text
             Transfer Protocol Secure) 443.
           </p>
-          <p>Required: <span class="true">true</span></p>
+          <p>Required: true</p>
           <p>Depends on: None</p>
-          <p>Type: <span class="type">Number</span></p>
+          <p>Type: Number</p>
         </div>
       </li>
       <li>
         <div>
-          <strong class="var">SAVE_LOGS</strong>
+          <strong>SAVE_LOGS</strong>
           <p>
             Specifies whether you want the server to save logs upon a new
             request.
           </p>
-          <p>Required: <span class="true">true</span></p>
+          <p>Required: true</p>
           <p>Depends on: None</p>
-          <p>Type: <span class="type">Boolean</span></p>
+          <p>Type: Boolean</p>
         </div>
       </li>
       <li>
         <div>
-          <strong class="var">MULTITHREADING</strong>
+          <strong>MULTITHREADING</strong>
           <p>
             Specifies whether you want to use multiple threads (faster) or a
             single thread (slower).
@@ -93,9 +87,9 @@
             PRODUCTION WARNING: LOGS ARENT SAVED EVEN IF THEY ARE ENABLED WHEN
             MULTITHREADING IS IN USE
           </strong>
-          <p>Required: <span class="true">true</span></p>
+          <p>Required: true</span></p>
           <p>Depends on: None</p>
-          <p>Type: <span class="type">Boolean</span></p>
+          <p>Type: Boolean</p>
         </div>
       </li>
     </ol>
@@ -110,14 +104,7 @@
       </li>
       <li>Run the rest of the script</li>
     </ol>
-    <h2>3. load.js</h2>
-    <p>
-      Load.js is the only JavaScript code utilized by this web server, and it's
-      purely for handling CSS files. It's bundled with the other files in your
-      destination static directory.
-      <strong>All your HTML files should import load.js.</strong>
-    </p>
-    <h2>4. VRS structure (/var/www/ default)</h2>
+    <h2>3. VRS structure (/var/www/ default)</h2>
     <ul>
       <li>/var/www/</li>
       <ul>
@@ -125,7 +112,6 @@
         <ul>
           <li>*.html</li>
           <li>*.css</li>
-          <li>load.js</li>
         </ul>
         <li>logs/</li>
         <ul>
