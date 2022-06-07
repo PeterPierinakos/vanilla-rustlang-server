@@ -99,7 +99,6 @@
         </div>
       </li>
     </ol>
-    <hr />
     <h2>2. Adding static files</h2>
     <h3>Steps for adding static files</h3>
     <ol>
@@ -111,18 +110,45 @@
       </li>
       <li>Run the rest of the script</li>
     </ol>
-    <hr />
-    <h2>3. FAQ</h2>
+    <h2>3. load.js</h2>
+    <p>
+      Load.js is the only JavaScript code utilized by this web server, and it's
+      purely for handling CSS files. It's bundled with the other files in your
+      destination static directory.
+      <strong>All your HTML files should import load.js.</strong>
+    </p>
+    <h2>4. VRS structure (/var/www/ default)</h2>
+    <ul>
+      <li>/var/www/</li>
+      <ul>
+        <li>static/</li>
+        <ul>
+          <li>*.html</li>
+          <li>*.css</li>
+          <li>load.js</li>
+        </ul>
+        <li>logs/</li>
+        <ul>
+          <li>*.txt</li>
+        </ul>
+      </ul>
+    </ul>
+    <p></p>
+    <h2>5. FAQ</h2>
     <ol>
       <li>
         <div>
           <h3>Is this production ready?</h3>
           <p>
-            I do not see any problem using this web server for production as the
-            only thing it does is serve HTML and static files.
+            I do not see any problem with using this web server for production
+            as the only thing it does is serve HTML and static files.
           </p>
+        </div>
+      </li>
+      <li>
+        <div>
           <h3>What is this project licensed under?</h3>
-          <p>GPL v3.0.</p>
+          <a href="https://mit-license.org/">MIT License</a>
         </div>
       </li>
     </ol>
