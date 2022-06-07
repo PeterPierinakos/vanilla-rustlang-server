@@ -1,6 +1,0 @@
-make --dry-run --always-make --keep-going --print-directory
-make: Entering directory '/home/peter/Repositories/vanilla-rustlang-server'
-make: Leaving directory '/home/peter/Repositories/vanilla-rustlang-server'
- 
-make: *** No targets.  Stop.
-
