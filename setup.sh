@@ -8,10 +8,12 @@ read STATIC
 echo "Please enter the directory for the logs you have set (recommended: /var/www/logs) (no leading slash)"
 read LOGS
 
-echo "mkdir -p $STATIC/html/"
-mkdir -p $STATIC/html/
+echo "rm -rf $STATIC/"
+rm -rf $STATIC/
+echo "mkdir $STATIC/"
+mkdir $STATIC/
 echo "mkdir -p $LOGS/html/"
 mkdir -p $LOGS 
-echo "cp ./media/* $STATIC/html/"
-cp ./media/* $STATIC/html/ 
+echo "cp ./media/* $STATIC/"
+cp ./media/* $STATIC/
 echo "Finished."
