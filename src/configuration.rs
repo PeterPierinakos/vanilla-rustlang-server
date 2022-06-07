@@ -1,19 +1,5 @@
 /*
-WARNING: LOGGING IS DISABLED WHEN USING ASYNC. ASYNC IS USUALLY NOT NECESSARY FOR A STATIC WEB SERVER AS IT BARELY INCREASES PERFORMANCE.
-
-ABSOLUTE_STATIC_CONTENT_PATH: The absolute path for your HTML/CSS files.
-ABSOLUTE_LOGS_PATH: The absolute path for the location to store the log files at runtime (you may keep it blank if you have set "SAVE_LOGS" to "false".)
-PORT: The port used by the server.
-ADDR: The address used by the server. IPv4 only. Use "127.0.0.1" for localhost.
-SAVE_LOGS: Change to "false" if you don't want logs of the requests to be saved at runtime.
-MULTITHREADING: Whether you want to handle connections with several workers instead of a single one.
-
-Tree example for ABSOLUTE_STATIC_CONTENT_PATH:
-ABSOLUTE_STATIC_CONTENT_PATH/
-    html/
-    css/
-
-So, inside the static folder you have provided there must be an "html" and "css" folder and you have to place the static files accordingly.
+Documentation in manual.html inside media/
 */
 
 pub const ABSOLUTE_STATIC_CONTENT_PATH: &str = "/var/www/static";

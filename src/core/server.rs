@@ -36,7 +36,7 @@ fn multithread_handle_connection(mut stream: TcpStream) {
     };
 
     let requested_content = fs::read_to_string(format!(
-        "{}/html/{}",
+        "{}/{}",
         ABSOLUTE_STATIC_CONTENT_PATH,
         uri.get().clone().unwrap()
     ));
@@ -88,7 +88,7 @@ fn handle_sync_connection(logfile: &Option<File>, mut stream: TcpStream) {
     };
 
     let requested_content = fs::read_to_string(format!(
-        "{}/html/{}",
+        "{}/{}",
         ABSOLUTE_STATIC_CONTENT_PATH,
         uri.get().clone().unwrap()
     ));
