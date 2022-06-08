@@ -1,0 +1,9 @@
+[Unit]
+Description=Vanilla RustLang Server
+
+[Socket]
+ListenStream=443
+Accept=no
+
+[Install]
+WantedBy=sockets.target
