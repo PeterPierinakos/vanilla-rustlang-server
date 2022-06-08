@@ -1,0 +1,13 @@
+[Unit]
+Description=Vanilla RustLang Server
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/vrs
+Restart=always
+RestartSec=5
+StandardInput=fd:static-web-server.socket
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
