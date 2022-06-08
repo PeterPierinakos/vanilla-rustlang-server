@@ -36,8 +36,7 @@ fn multithread_handle_connection(mut stream: TcpStream) {
     };
 
     let requested_content = fs::read_to_string(format!(
-        "{}/{}",
-        ABSOLUTE_STATIC_CONTENT_PATH,
+        "{ABSOLUTE_STATIC_CONTENT_PATH}/{}",
         uri.get().clone().unwrap()
     ));
     let response = match requested_content {
@@ -88,8 +87,7 @@ fn handle_sync_connection(logfile: &Option<File>, mut stream: TcpStream) {
     };
 
     let requested_content = fs::read_to_string(format!(
-        "{}/{}",
-        ABSOLUTE_STATIC_CONTENT_PATH,
+        "{ABSOLUTE_STATIC_CONTENT_PATH}/{}",
         uri.get().clone().unwrap()
     ));
     let response = match requested_content {
@@ -102,14 +100,14 @@ fn handle_sync_connection(logfile: &Option<File>, mut stream: TcpStream) {
 }
 
 pub fn start_server(unixtime: u64) {
-    let listener = TcpListener::bind(format!("{}:{}", ADDR, PORT)).unwrap();
+    let listener = TcpListener::bind(format!("{ADDR}:{PORT}")).unwrap();
 
     let logfile = if SAVE_LOGS {
         Some(
             OpenOptions::new()
                 .append(true)
                 .create(true)
-                .open(format!("{}/{}.txt", ABSOLUTE_LOGS_PATH, unixtime))
+                .open(format!("{ABSOLUTE_LOGS_PATH}/{unixtime}.txt"))
                 .expect("Unable to open logs"),
         )
     } else {
