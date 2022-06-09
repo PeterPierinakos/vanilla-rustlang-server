@@ -12,8 +12,8 @@ echo "rm -rf $STATIC/"
 rm -rf $STATIC/
 echo "mkdir $STATIC/"
 mkdir $STATIC/
-echo "mkdir -p $LOGS/html/"
-mkdir -p $LOGS 
+echo "mkdir -p $LOGS/"
+mkdir -p $LOGS/ 
 echo "cp ./media/* $STATIC/"
 cp ./media/* $STATIC/
 echo "Finished."
