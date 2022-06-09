@@ -59,9 +59,10 @@ fn handle_sync_connection(logfile: &Option<File>, mut stream: TcpStream) {
             .unwrap()
             .write_all(
                 format!(
-                    "REQUEST AT {}\nINFO: {}\n===========\n",
+                    "REQUEST AT {}\nREQUEST IP ADDRESS: {}\nINFO: {}\n===========\n",
                     generate_unixtime(),
-                    str::from_utf8(&buf).unwrap()
+                    stream.local_addr().unwrap(),
+                    str::from_utf8(&buf).unwrap(),
                 )
                 .as_bytes(),
             )
