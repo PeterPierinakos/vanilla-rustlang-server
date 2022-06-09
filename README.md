@@ -26,13 +26,11 @@ I see no problem with using it for production. However, please be informed that 
 - A bank system.
 - SpaceX clone.
 
----
-
-## License
+### License
 
 VRS is licensed under the [MIT License](https://mit-license.org/).
 
-## When to use VRS?
+### When to use VRS?
 
 You may consider using this piece of software if you meet any of the following criteria:
 
