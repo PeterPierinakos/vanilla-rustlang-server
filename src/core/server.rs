@@ -1,5 +1,4 @@
 use crate::configuration::*;
-use crate::constants::*;
 use crate::core::time::generate_unixtime;
 use crate::enums::methods::HttpRequestMethod;
 use crate::structs::cors::Cors;
