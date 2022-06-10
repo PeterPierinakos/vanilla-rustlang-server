@@ -1,6 +1,7 @@
 mod configuration;
 mod constants;
 mod core;
+mod enums;
 mod structs;
 mod util;
 

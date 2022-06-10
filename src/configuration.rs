@@ -12,4 +12,4 @@ pub const PORT: u32 = 80;
 pub const SAVE_LOGS: bool = true;
 
 /* Production note: Multithreaded mode currently doesn't support logs. */
-pub const MULTITHREADING: bool = false;
+pub const MULTITHREADING: bool = true;
