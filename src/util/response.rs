@@ -1,9 +1,21 @@
+use crate::configuration::HTTP_PROTOCOL_VERSION;
 use crate::configuration::*;
+use crate::enums::methods::HttpProtocolVersion;
 use std::fs;
+
+pub fn find_protocol() -> &'static str {
+    if HTTP_PROTOCOL_VERSION == HttpProtocolVersion::OneDotOne {
+        return "HTTP/1.1";
+    }
+    "HTTP/2"
+}
 
 pub fn response_success(file: String) -> String {
     let ln = file.len();
-    format!("HTTP/2 200 OK\r\nContent-Length: {ln}\r\n\r\n{file}",)
+
+    let protocol = find_protocol();
+
+    format!("{protocol} 200 OK\r\nContent-Type: text/html\r\nContent-Length: {ln}\r\n\r\n{file}",)
 }
 
 pub fn response_400() -> String {
@@ -14,7 +26,7 @@ pub fn response_400() -> String {
 
     let ln = page_400.len();
 
-    format!("HTTP/2 400 Bad Request\r\nContent-Length: {ln}\r\n\r\n{page_400}",)
+    format!("HTTP/2 400 Bad Request\r\nContent-Type: text/html\r\nContent-Length: {ln}\r\n\r\n{page_400}",)
 }
 
 pub fn response_404() -> String {
@@ -24,5 +36,7 @@ pub fn response_404() -> String {
 
     let ln = page_404.len();
 
-    format!("HTTP/2 404 Not Found\r\nContent-Length: {ln}\r\n\r\n{page_404}")
+    format!(
+        "HTTP/2 404 Not Found\r\nContent-Type: text/html\r\nContent-Length: {ln}\r\n\r\n{page_404}"
+    )
 }
