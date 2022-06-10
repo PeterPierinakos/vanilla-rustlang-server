@@ -11,13 +11,18 @@ use std::{
     io::Read,
     net::{TcpListener, TcpStream},
 };
+use crate::enums::method::Method;
+use crate::structs::cors::Cors;
+use std::collections::HashSet;
 
 fn multithread_handle_connection(mut stream: TcpStream) {
     let mut buf = [0; 1024];
 
     stream.read(&mut buf).unwrap();
 
-    if !buf.starts_with(GET) {
+    let cors = Cors::new("*".to_string(), HashSet::from([Method::GET]));
+
+    if !cors.method_is_allowed(str::from_utf8(&buf).unwrap().to_string()) {
         let response = response_400();
         stream.write(response.as_bytes()).unwrap();
         stream.flush().unwrap();
@@ -69,12 +74,15 @@ fn handle_sync_connection(logfile: &Option<File>, mut stream: TcpStream) {
             .unwrap();
     }
 
-    if !buf.starts_with(GET) {
+    let cors = Cors::new("*".to_string(), HashSet::from([Method::GET]));
+
+    if !cors.method_is_allowed(str::from_utf8(&buf).unwrap().to_string()) {
         let response = response_400();
         stream.write(response.as_bytes()).unwrap();
         stream.flush().unwrap();
         return;
     }
+
 
     let mut uri = URI::new();
 
