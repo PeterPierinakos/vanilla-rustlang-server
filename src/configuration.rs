@@ -2,6 +2,8 @@
 Documentation in manual.html inside media/
 */
 
+use crate::enums::methods::HttpProtocolVersion;
+
 pub const ABSOLUTE_STATIC_CONTENT_PATH: &str = "/var/www/static";
 pub const ABSOLUTE_LOGS_PATH: &str = "/var/www/logs";
 
@@ -13,3 +15,5 @@ pub const SAVE_LOGS: bool = true;
 
 /* Production note: Multithreaded mode currently doesn't support logs. */
 pub const MULTITHREADING: bool = true;
+
+pub const HTTP_PROTOCOL_VERSION: HttpProtocolVersion = HttpProtocolVersion::OneDotOne;

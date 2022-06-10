@@ -1,8 +1,11 @@
 use crate::configuration::*;
 use crate::constants::*;
 use crate::core::time::generate_unixtime;
+use crate::enums::methods::HttpRequestMethod;
+use crate::structs::cors::Cors;
 use crate::structs::uri::URI;
 use crate::util::response::*;
+use std::collections::HashSet;
 use std::io::Write;
 use std::str;
 use std::thread;
@@ -11,16 +14,13 @@ use std::{
     io::Read,
     net::{TcpListener, TcpStream},
 };
-use crate::enums::method::Method;
-use crate::structs::cors::Cors;
-use std::collections::HashSet;
 
 fn multithread_handle_connection(mut stream: TcpStream) {
     let mut buf = [0; 1024];
 
     stream.read(&mut buf).unwrap();
 
-    let cors = Cors::new("*".to_string(), HashSet::from([Method::GET]));
+    let cors = Cors::new("*".to_string(), HashSet::from([HttpRequestMethod::GET]));
 
     if !cors.method_is_allowed(str::from_utf8(&buf).unwrap().to_string()) {
         let response = response_400();
@@ -74,7 +74,7 @@ fn handle_sync_connection(logfile: &Option<File>, mut stream: TcpStream) {
             .unwrap();
     }
 
-    let cors = Cors::new("*".to_string(), HashSet::from([Method::GET]));
+    let cors = Cors::new("*".to_string(), HashSet::from([HttpRequestMethod::GET]));
 
     if !cors.method_is_allowed(str::from_utf8(&buf).unwrap().to_string()) {
         let response = response_400();
@@ -82,7 +82,6 @@ fn handle_sync_connection(logfile: &Option<File>, mut stream: TcpStream) {
         stream.flush().unwrap();
         return;
     }
-
 
     let mut uri = URI::new();
 
