@@ -19,7 +19,7 @@ fn multithread_handle_connection(mut stream: TcpStream) {
 
     stream.read(&mut buf).unwrap();
 
-    let cors = Cors::new("*".to_string(), HashSet::from([HttpRequestMethod::GET]));
+    let cors = Cors::new(HashSet::from([HttpRequestMethod::GET]));
 
     if !cors.method_is_allowed(str::from_utf8(&buf).unwrap().to_string()) {
         let response = response_400();
@@ -73,7 +73,7 @@ fn handle_sync_connection(logfile: &Option<File>, mut stream: TcpStream) {
             .unwrap();
     }
 
-    let cors = Cors::new("*".to_string(), HashSet::from([HttpRequestMethod::GET]));
+    let cors = Cors::new(HashSet::from([HttpRequestMethod::GET]));
 
     if !cors.method_is_allowed(str::from_utf8(&buf).unwrap().to_string()) {
         let response = response_400();
