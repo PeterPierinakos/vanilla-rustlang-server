@@ -56,6 +56,11 @@ make build
 
 3. Copy the HTML and run the program:
 
+```
+# (Root may be required)
+./setup.sh
+```
+
 #### Docker
 
 ```
@@ -65,9 +70,8 @@ sudo docker build -f production/docker/alpine/Dockerfile -t vrs .
 #### Without Docker
 
 ```
-# Root required for default static target directory
+# (Root may be required)
 sudo ./setup.sh
-# You may have to run as root if you use port 80 / 443 or if you have enabled logging.
 sudo make run
 ```
 

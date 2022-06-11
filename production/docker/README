@@ -1,0 +1,1 @@
+Production Note: The recommended image to use is the Alpine one because it's more lightweight and generally more convenient to use than Debian for hosting docker containers. However, you are still provided with it as an alternative in case you need specific Debian functionality or your Alpine image just doesn't work.
