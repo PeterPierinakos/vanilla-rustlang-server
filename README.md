@@ -1,6 +1,6 @@
 # Vanilla RustLang Server (VRS)
 
-VRS is a simple, minimal, free and open source static web server written in Rust which uses absolutely no dependencies.
+VRS is a simple, minimal, free and open source static web server written in Rust which uses absolutely no dependencies and revolves around Rust's std::net built-in utility.
 
 ## General Information
 
