@@ -13,6 +13,7 @@ use std::{
     io::Read,
     net::{TcpListener, TcpStream},
 };
+use crate::util::license::print_license_info;
 
 fn multithread_handle_connection(mut stream: TcpStream) {
     let mut buf = [0; 1024];
@@ -107,6 +108,8 @@ fn handle_sync_connection(logfile: &Option<File>, mut stream: TcpStream) {
 }
 
 pub fn start_server(unixtime: u64) {
+    print_license_info();
+
     let listener = TcpListener::bind(format!("{ADDR}:{PORT}")).unwrap();
 
     let logfile = if SAVE_LOGS {
