@@ -1,10 +1,10 @@
 use std::str;
 use std::collections::HashMap;
 
-pub fn find_buf_headers(buf: &[u8; 1024]) -> Vec<HashMap<String, String>> {
+pub fn find_buf_headers(buf: &[u8; 1024]) -> HashMap<String, String> {
         let buffer_c = str::from_utf8(buf).unwrap(); 
 
-        let mut headers: Vec<HashMap<String, String>> = Vec::new();
+        let mut headers: HashMap<String, String> = HashMap::new();
 
         let mut curr_header_name = String::new();
         let mut curr_header_value = String::new();
@@ -17,8 +17,10 @@ pub fn find_buf_headers(buf: &[u8; 1024]) -> Vec<HashMap<String, String>> {
             }
             else if c == '\r' || c == '\n' {
                 if !curr_header_name.is_empty() && !curr_header_value.is_empty() {
-                    headers.push(HashMap::from([(curr_header_name.clone(), curr_header_value.clone())]));
-                    
+                    headers.insert(
+                        curr_header_name,
+                        curr_header_value,
+                    );
                 }
                 curr_header_name = String::new();
                 curr_header_value = String::new();
