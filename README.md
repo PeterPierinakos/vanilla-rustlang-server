@@ -90,6 +90,4 @@ sudo ./setup.sh
 sudo make run
 ```
 
-### Precompiled binary
-
-Todo
+Have fun!
