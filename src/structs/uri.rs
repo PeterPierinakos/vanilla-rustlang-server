@@ -14,25 +14,27 @@ impl URI {
     pub fn find(&mut self, headers_buffer: &String) {
         let mut uri = String::new();
 
-        let mut dot_c = 0;
-
         for (i, c) in headers_buffer.chars().enumerate() {
             // After the "GET" in the INFO header.
             if c == ' ' && i != 3 {
                 break;
             }
             if i > 4 {
-                if c == '.' {
-                    dot_c += 1;
-                }
                 uri.push(c);
             }
         }
 
-        if dot_c > 1 {
-            self.found_error = true;
-            self.uri = None;
-            return;
+        println!("{}", uri);
+
+        let path = std::path::Path::new(&uri);
+        let mut components = path.components().peekable();
+
+        if let Some(first) = components.peek() {
+            if !matches!(first, std::path::Component::Normal(_)) {
+                self.uri = None;
+                self.found_error = true;
+                return;
+            }
         }
 
         if uri.is_empty() {
