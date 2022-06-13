@@ -44,3 +44,17 @@ pub fn response_404() -> String {
         "{protocol} 404 Not Found\r\nContent-Type: text/html\r\nContent-Length: {ln}\r\n\r\n{page_404}"
     )
 }
+
+pub fn response_500() -> String {
+    let page_500 = fs::read_to_string(format!("{ABSOLUTE_STATIC_CONTENT_PATH}/500.html")).expect(
+        format!("500 HTML page doesn't exist ('{ABSOLUTE_STATIC_CONTENT_PATH}/500.html')").as_str(),
+    );
+
+    let protocol = find_protocol();
+
+    let ln = page_500.len();
+
+    format!(
+        "{protocol} 500 Internal Server Error\r\nContent-Type: text/html\r\nContent-Length: {ln}\r\n\r\n{page_500}"
+    )
+}

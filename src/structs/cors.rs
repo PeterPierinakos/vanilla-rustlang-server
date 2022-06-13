@@ -13,7 +13,7 @@ impl Cors {
         }
     }
 
-    pub fn method_is_allowed(&self, buf: String) -> bool {
+    pub fn method_is_allowed(&self, buf: &String) -> bool {
         for method in self.allowed_methods.iter() {
             if buf.starts_with(&method.to_string()) {
                 return true;
