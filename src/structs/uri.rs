@@ -24,8 +24,6 @@ impl URI {
             }
         }
 
-        println!("{}", uri);
-
         let path = std::path::Path::new(&uri);
         let mut components = path.components().peekable();
 
