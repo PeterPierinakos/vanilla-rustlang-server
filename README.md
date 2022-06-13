@@ -25,10 +25,6 @@ VRS is a simple, minimal, free and open source static web server written in Rust
 
 A static web server is a kind of web server which only serves static content. This includes HTML, CSS and JS. Static web servers do _not_ have support for doing back-end business logic or interacting with databases out of the box.
 
-### Is VRS production-ready?
-
-I see no problem with using it for production. However, please be informed that you should **NOT** pass sensitive data through JS or interact with databases as it was not meant to be used for this purpose. Additionally, since it is licensed under a FOSS license I have no warranty for any damages and you are free to make issues if you encounter any bugs.
-
 ### Example use cases of VRS
 
 - A portfolio which is mostly HTML & CSS and a little bit of JS.
