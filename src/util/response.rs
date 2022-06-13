@@ -24,9 +24,11 @@ pub fn response_400() -> String {
             .as_str(),
     );
 
+    let protocol = find_protocol();
+
     let ln = page_400.len();
 
-    format!("HTTP/2 400 Bad Request\r\nContent-Type: text/html\r\nContent-Length: {ln}\r\n\r\n{page_400}",)
+    format!("{protocol} 400 Bad Request\r\nContent-Type: text/html\r\nContent-Length: {ln}\r\n\r\n{page_400}",)
 }
 
 pub fn response_404() -> String {
@@ -34,9 +36,11 @@ pub fn response_404() -> String {
         format!("404 HTML page doesn't exist ('{ABSOLUTE_STATIC_CONTENT_PATH}/400.html')").as_str(),
     );
 
+    let protocol = find_protocol();
+
     let ln = page_404.len();
 
     format!(
-        "HTTP/2 404 Not Found\r\nContent-Type: text/html\r\nContent-Length: {ln}\r\n\r\n{page_404}"
+        "{protocol} 404 Not Found\r\nContent-Type: text/html\r\nContent-Length: {ln}\r\n\r\n{page_404}"
     )
 }
