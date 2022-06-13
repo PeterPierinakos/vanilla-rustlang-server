@@ -2,3 +2,4 @@
 
 tibordp, reported path traversal vulnerability (issue #3)
 alphabitserial, reported optimal solution for path traversal vulnerability (issue #3)
+maciejhirsz, reported unwraps that cause the server to throw panic errors during runtime
