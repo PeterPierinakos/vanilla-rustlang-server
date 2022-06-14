@@ -21,7 +21,7 @@ fn multithread_handle_connection(mut stream: TcpStream) {
 
 
     if buf.is_none() {
-        let response = response_500();
+        let response = response_400();
         stream.write(response.as_bytes()).unwrap();
         stream.flush().unwrap();
         return;
@@ -32,7 +32,7 @@ fn multithread_handle_connection(mut stream: TcpStream) {
     let buf_utf8 = parse_utf8(&buf);
 
     if buf_utf8.is_none() { 
-        let response = response_500();
+        let response = response_400();
         stream.write(response.as_bytes()).unwrap();
         stream.flush().unwrap();
         return;
@@ -82,7 +82,7 @@ fn handle_sync_connection(logfile: &Option<File>, mut stream: TcpStream) {
     /* === */
 
     if buf.is_none() {
-        let response = response_500();
+        let response = response_400();
         stream.write(response.as_bytes()).unwrap();
         stream.flush().unwrap();
         return;
@@ -93,7 +93,7 @@ fn handle_sync_connection(logfile: &Option<File>, mut stream: TcpStream) {
     let buf_utf8 = parse_utf8(&buf);
 
     if buf_utf8.is_none() { 
-        let response = response_500();
+        let response = response_400();
         stream.write(response.as_bytes()).unwrap();
         stream.flush().unwrap();
         return;
