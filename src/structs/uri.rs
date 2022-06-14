@@ -1,3 +1,5 @@
+use std::path::{Path, PathBuf, Component};
+
 pub struct URI {
     uri: Option<String>,
     found_error: bool,
@@ -25,14 +27,11 @@ impl URI {
         }
 
         let path = std::path::Path::new(&uri);
-        let mut components = path.components().peekable();
 
-        if let Some(first) = components.peek() {
-            if !matches!(first, std::path::Component::Normal(_)) {
+        if !URI::path_is_valid(Path::new(&path)) {
                 self.uri = None;
                 self.found_error = true;
                 return;
-            }
         }
 
         if uri.is_empty() {
@@ -45,5 +44,27 @@ impl URI {
 
     pub fn get(&self) -> &Option<String> {
         &self.uri
+    }
+
+    pub fn path_is_valid(path: &Path) -> bool {
+        let mut result = PathBuf::new();
+        let components = path.components();
+
+        for component in components {
+            println!("{:?}", component);
+            match component {
+                Component::Prefix(_) => return false, // Should be unreachable
+                Component::RootDir => return false, // Should be unreachable
+                Component::CurDir => if result.as_os_str().is_empty() {
+                    // If you've already stripped the leading / from the requested path, this should no-op
+                    result.push(Component::RootDir);
+                },
+                Component::ParentDir => if !result.pop() {
+                    return false;
+                },
+                Component::Normal(p) => result.push(p)
+            };
+        }
+        true
     }
 }
