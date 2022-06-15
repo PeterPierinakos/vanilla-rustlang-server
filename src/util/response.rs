@@ -1,7 +1,21 @@
 use crate::configuration::HTTP_PROTOCOL_VERSION;
 use crate::configuration::*;
-use crate::enums::methods::HttpProtocolVersion;
+use crate::enums::http::HttpProtocolVersion;
+use crate::enums::server::{ServerError, StatusCode};
 use std::fs;
+
+pub fn handle_response(response: Result<(StatusCode, Option<String>), ServerError>) -> String {
+    match response {
+        Ok((StatusCode::OK, file)) => response_success(file.unwrap()),
+        Ok((StatusCode::BadRequest, _)) => response_400(),
+        Ok((StatusCode::MethodNotAllowed, _)) => response_405(),
+        Ok((StatusCode::NotFound, _)) => response_404(),
+        Ok((StatusCode::InternalServerError, _)) => response_500(),
+        Err(ServerError::ParseIntegerError(_)) => response_400(),
+        Err(ServerError::ParseUtf8Error(_)) => response_400(),
+        Err(ServerError::StreamError(_)) => response_400(),
+    }
+}
 
 pub fn find_protocol() -> &'static str {
     if HTTP_PROTOCOL_VERSION == HttpProtocolVersion::OneDotOne {
@@ -33,7 +47,7 @@ pub fn response_400() -> String {
 
 pub fn response_404() -> String {
     let page_404 = fs::read_to_string(format!("{ABSOLUTE_STATIC_CONTENT_PATH}/404.html")).expect(
-        format!("404 HTML page doesn't exist ('{ABSOLUTE_STATIC_CONTENT_PATH}/400.html')").as_str(),
+        format!("404 HTML page doesn't exist ('{ABSOLUTE_STATIC_CONTENT_PATH}/404.html')").as_str(),
     );
 
     let protocol = find_protocol();
@@ -45,6 +59,19 @@ pub fn response_404() -> String {
     )
 }
 
+pub fn response_405() -> String {
+    let page_405 = fs::read_to_string(format!("{ABSOLUTE_STATIC_CONTENT_PATH}/405.html")).expect(
+        format!("404 HTML page doesn't exist ('{ABSOLUTE_STATIC_CONTENT_PATH}/405.html')").as_str(),
+    );
+
+    let protocol = find_protocol();
+
+    let ln = page_405.len();
+
+    format!(
+        "{protocol} 404 Not Found\r\nContent-Type: text/html\r\nContent-Length: {ln}\r\n\r\n{page_405}"
+    )
+}
 pub fn response_500() -> String {
     let page_500 = fs::read_to_string(format!("{ABSOLUTE_STATIC_CONTENT_PATH}/500.html")).expect(
         format!("500 HTML page doesn't exist ('{ABSOLUTE_STATIC_CONTENT_PATH}/500.html')").as_str(),

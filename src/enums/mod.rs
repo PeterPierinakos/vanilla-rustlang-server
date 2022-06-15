@@ -1,1 +1,2 @@
-pub mod methods;
+pub mod http;
+pub mod server;

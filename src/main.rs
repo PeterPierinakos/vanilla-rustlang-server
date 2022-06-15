@@ -1,11 +1,10 @@
 mod configuration;
-mod core;
 mod enums;
 mod structs;
 mod util;
 
-use crate::core::server::start_server;
-use crate::core::time::generate_unixtime;
+use crate::util::server::start_server;
+use crate::util::time::generate_unixtime;
 
 pub fn main() {
     let unixtime = generate_unixtime();

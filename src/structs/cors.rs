@@ -1,4 +1,4 @@
-use crate::enums::methods::HttpRequestMethod;
+use crate::enums::http::HttpRequestMethod;
 use std::collections::HashSet;
 
 pub struct Cors {
@@ -7,8 +7,8 @@ pub struct Cors {
 
 #[allow(dead_code)]
 impl Cors {
-    pub fn new(allowed_methods: HashSet<HttpRequestMethod>) -> Cors {
-        Cors {
+    pub fn new(allowed_methods: HashSet<HttpRequestMethod>) -> Self {
+        Self {
             allowed_methods: allowed_methods,
         }
     }
