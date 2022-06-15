@@ -2,7 +2,7 @@
 Documentation in manual.html inside media/
 */
 
-use crate::enums::methods::HttpProtocolVersion;
+use crate::enums::http::HttpProtocolVersion;
 
 pub const ABSOLUTE_STATIC_CONTENT_PATH: &str = "/var/www/static";
 pub const ABSOLUTE_LOGS_PATH: &str = "/var/www/logs";

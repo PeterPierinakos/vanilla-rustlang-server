@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf, Component};
+use std::path::{Component, Path, PathBuf};
 
 pub struct URI {
     uri: Option<String>,
@@ -29,9 +29,9 @@ impl URI {
         let path = std::path::Path::new(&uri);
 
         if !URI::path_is_valid(Path::new(&path)) {
-                self.uri = None;
-                self.found_error = true;
-                return;
+            self.uri = None;
+            self.found_error = true;
+            return;
         }
 
         if uri.is_empty() {
@@ -51,18 +51,21 @@ impl URI {
         let components = path.components();
 
         for component in components {
-            println!("{:?}", component);
             match component {
                 Component::Prefix(_) => return false, // Should be unreachable
-                Component::RootDir => return false, // Should be unreachable
-                Component::CurDir => if result.as_os_str().is_empty() {
-                    // If you've already stripped the leading / from the requested path, this should no-op
-                    result.push(Component::RootDir);
-                },
-                Component::ParentDir => if !result.pop() {
-                    return false;
-                },
-                Component::Normal(p) => result.push(p)
+                Component::RootDir => return false,   // Should be unreachable
+                Component::CurDir => {
+                    if result.as_os_str().is_empty() {
+                        // If you've already stripped the leading / from the requested path, this should no-op
+                        result.push(Component::RootDir);
+                    }
+                }
+                Component::ParentDir => {
+                    if !result.pop() {
+                        return false;
+                    }
+                }
+                Component::Normal(p) => result.push(p),
             };
         }
         true
