@@ -1,8 +1,7 @@
 use super::headers::{standard_headers, Header};
-use crate::configuration::HTTP_PROTOCOL_VERSION;
 use crate::configuration::*;
-use crate::enums::http::HttpProtocolVersion;
 use crate::enums::server::{ServerError, StatusCode};
+use crate::structs::responsebuilder::ResponseBuilder;
 use std::cell::RefCell;
 use std::fs;
 
@@ -28,42 +27,6 @@ pub fn handle_response(response: ServerResponse) -> String {
     }
 }
 
-pub fn find_protocol() -> &'static str {
-    if HTTP_PROTOCOL_VERSION == HttpProtocolVersion::OneDotOne {
-        return "HTTP/1.1";
-    }
-    "HTTP/2"
-}
-
-pub fn response_builder(
-    file: String,
-    protocol: &str,
-    status_code: StatusCode,
-    headers: Header,
-) -> String {
-    let mut response = String::new();
-
-    response.push_str(format!("{protocol} ").as_str());
-
-    response.push_str(match status_code {
-        StatusCode::OK => "200 OK ",
-        StatusCode::BadRequest => "400 Bad Request ",
-        StatusCode::NotFound => "404 Not Found ",
-        StatusCode::MethodNotAllowed => "405 Method Not Allowed ",
-        StatusCode::InternalServerError => "500 Internal Server Error ",
-    });
-
-    for (key, val) in headers.iter() {
-        response.push_str("\r\n");
-        response.push_str(format!("{key}: {val}").as_str());
-    }
-
-    response.push_str("\r\n\r\n");
-    response.push_str(format!("{file}").as_str());
-
-    response
-}
-
 pub fn implement_cors_header(req_headers: &Header, res_headers: &mut Header) {
     match req_headers.get("Access-Control-Allow-Origin") {
         Some(val) => res_headers.insert("Access-Control-Allow-Origin".to_string(), val.to_string()),
@@ -79,74 +42,112 @@ pub fn response_success(req_headers: RefCell<Header>, file: String) -> String {
 
     implement_cors_header(&req_headers.borrow(), &mut res_headers);
 
-    response_builder(file, find_protocol(), StatusCode::OK, res_headers)
+    let mut response = ResponseBuilder::new();
+
+    response.detect_protocol();
+    response.body(file.as_str());
+    response.status_code(StatusCode::OK);
+
+    for (key, val) in res_headers {
+        response.add_header(key, val);
+    }
+
+    response.construct()
 }
 
 pub fn response_400(req_headers: RefCell<Header>) -> String {
-    let page_400 = fs::read_to_string(format!("{ABSOLUTE_STATIC_CONTENT_PATH}/400.html")).expect(
-        format!("400 HTML page doesn't exist ('{ABSOLUTE_STATIC_CONTENT_PATH}/400.html')",)
-            .as_str(),
-    );
+    let page_400 = find_file("400.html");
 
     let mut res_headers = standard_headers(&page_400);
 
     implement_cors_header(&req_headers.borrow(), &mut res_headers);
 
-    response_builder(
-        page_400,
-        find_protocol(),
-        StatusCode::BadRequest,
-        res_headers,
-    )
+    let mut response = ResponseBuilder::new();
+
+    let file = find_file("400.html");
+
+    response.detect_protocol();
+    response.body(file.as_str());
+    response.status_code(StatusCode::OK);
+
+    for (key, val) in res_headers {
+        response.add_header(key, val);
+    }
+
+    response.construct()
 }
 
 pub fn response_404(req_headers: RefCell<Header>) -> String {
-    let page_404 = fs::read_to_string(format!("{ABSOLUTE_STATIC_CONTENT_PATH}/404.html")).expect(
-        format!("404 HTML page doesn't exist ('{ABSOLUTE_STATIC_CONTENT_PATH}/404.html')").as_str(),
-    );
+    let page_404 = find_file("404.html");
 
     let mut res_headers = standard_headers(&page_404);
 
     implement_cors_header(&req_headers.borrow(), &mut res_headers);
 
-    response_builder(
-        page_404,
-        find_protocol(),
-        StatusCode::BadRequest,
-        res_headers,
-    )
+    let mut response = ResponseBuilder::new();
+
+    let file = find_file("404.html");
+
+    response.detect_protocol();
+    response.body(file.as_str());
+    response.status_code(StatusCode::OK);
+
+    for (key, val) in res_headers {
+        response.add_header(key, val);
+    }
+
+    response.construct()
 }
 
 pub fn response_405(req_headers: RefCell<Header>) -> String {
-    let page_405 = fs::read_to_string(format!("{ABSOLUTE_STATIC_CONTENT_PATH}/405.html")).expect(
-        format!("405 HTML page doesn't exist ('{ABSOLUTE_STATIC_CONTENT_PATH}/405.html')").as_str(),
-    );
+    let page_405 = find_file("405.html");
 
     let mut res_headers = standard_headers(&page_405);
 
     implement_cors_header(&req_headers.borrow(), &mut res_headers);
 
-    response_builder(
-        page_405,
-        find_protocol(),
-        StatusCode::BadRequest,
-        res_headers,
-    )
+    let mut response = ResponseBuilder::new();
+
+    let file = find_file("405.html");
+
+    response.detect_protocol();
+    response.body(file.as_str());
+    response.status_code(StatusCode::OK);
+
+    for (key, val) in res_headers {
+        response.add_header(key, val);
+    }
+
+    response.construct()
 }
 
 pub fn response_500(req_headers: RefCell<Header>) -> String {
-    let page_500 = fs::read_to_string(format!("{ABSOLUTE_STATIC_CONTENT_PATH}/500.html")).expect(
-        format!("500 HTML page doesn't exist ('{ABSOLUTE_STATIC_CONTENT_PATH}/500.html')").as_str(),
-    );
+    let page_500 = find_file("500.html");
 
     let mut res_headers = standard_headers(&page_500);
 
     implement_cors_header(&req_headers.borrow(), &mut res_headers);
 
-    response_builder(
-        page_500,
-        find_protocol(),
-        StatusCode::BadRequest,
-        res_headers,
-    )
+    let mut response = ResponseBuilder::new();
+
+    let file = find_file("500.html");
+
+    response.detect_protocol();
+    response.body(file.as_str());
+    response.status_code(StatusCode::OK);
+
+    for (key, val) in res_headers {
+        response.add_header(key, val);
+    }
+
+    response.construct()
+}
+
+fn find_file(filename: &str) -> String {
+    let file = fs::read_to_string(format!("{ABSOLUTE_STATIC_CONTENT_PATH}/{filename}")).expect(
+        format!("{filename} file doesn't exist ('{ABSOLUTE_STATIC_CONTENT_PATH}/{filename}')")
+            .as_str(),
+    );
+
+    file
 }
