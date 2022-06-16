@@ -1,4 +1,4 @@
-use crate::{enums::server::ServerError, structs::cors::Cors};
+use crate::enums::server::ServerError;
 use std::net::TcpStream;
 use std::str;
 use std::{cell::RefCell, io::Read};
