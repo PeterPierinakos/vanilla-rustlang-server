@@ -3,7 +3,6 @@ use std::collections::HashMap;
 use std::str;
 
 use crate::enums::server::ServerError;
-use crate::structs::cors::Cors;
 
 use super::response::ErrorResponse;
 
