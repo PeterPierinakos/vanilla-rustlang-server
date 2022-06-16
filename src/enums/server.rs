@@ -1,4 +1,3 @@
-use crate::structs::readstreamerror::ReadStreamError;
 use std::num::ParseIntError;
 use std::str::Utf8Error;
 
@@ -11,21 +10,19 @@ pub enum StatusCode {
     MethodNotAllowed,
 }
 
+#[allow(dead_code)]
 pub enum ServerError {
     ParseIntegerError(ParseIntError),
     ParseUtf8Error(Utf8Error),
-    StreamError(ReadStreamError),
+    StreamError,
+    BufferHeaderError,
+    MissingHeaderError,
+    CorsError,
 }
 
 impl From<ParseIntError> for ServerError {
     fn from(error: ParseIntError) -> Self {
         ServerError::ParseIntegerError(error)
-    }
-}
-
-impl From<ReadStreamError> for ServerError {
-    fn from(error: ReadStreamError) -> Self {
-        ServerError::StreamError(error)
     }
 }
 

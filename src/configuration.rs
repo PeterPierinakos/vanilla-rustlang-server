@@ -17,3 +17,7 @@ pub const SAVE_LOGS: bool = true;
 pub const MULTITHREADING: bool = false;
 
 pub const HTTP_PROTOCOL_VERSION: HttpProtocolVersion = HttpProtocolVersion::OneDotOne;
+
+/* Production note: You should allow all origins if you want everyone to access your page. If you set "ALLOW_ALL_ORIGINS" to true, you may keep "ALLOWED_ORIGINS" empty. */
+pub const ALLOW_ALL_ORIGINS: bool = true;
+pub const ALLOWED_ORIGINS: [&str; 0] = [];

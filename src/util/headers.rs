@@ -1,8 +1,18 @@
+use std::cell::RefCell;
 use std::collections::HashMap;
 use std::str;
 
+use crate::enums::server::ServerError;
+use crate::structs::cors::Cors;
+
+use super::response::ErrorResponse;
+
+pub type Header = HashMap<String, String>;
+
 #[allow(dead_code)]
-pub fn find_buf_headers(buf: &[u8; 1024]) -> HashMap<String, String> {
+pub fn find_buf_headers<'a>(
+    buf: &'a [u8; 1024],
+) -> Result<HashMap<String, String>, ErrorResponse<'a>> {
     let buffer_c = str::from_utf8(buf).unwrap();
 
     let mut headers: HashMap<String, String> = HashMap::new();
@@ -30,6 +40,19 @@ pub fn find_buf_headers(buf: &[u8; 1024]) -> HashMap<String, String> {
             }
         }
     }
+
+    if headers.is_empty() {
+        return Err((RefCell::from(headers), ServerError::BufferHeaderError));
+    }
+
+    Ok(headers)
+}
+
+pub fn standard_headers(file: &String) -> Header {
+    let mut headers: HashMap<String, String> = HashMap::new();
+
+    headers.insert("Content-Type".to_string(), "text/html".to_string());
+    headers.insert("Content-Length".to_string(), file.len().to_string());
 
     headers
 }
