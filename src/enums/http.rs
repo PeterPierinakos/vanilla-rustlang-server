@@ -8,7 +8,7 @@ pub enum HttpProtocolVersion {
 }
 
 #[allow(dead_code)]
-#[derive(Debug, Eq, Hash, PartialEq)]
+#[derive(Clone, Debug, Eq, Hash, PartialEq)]
 pub enum HttpRequestMethod {
     GET,
     HEAD,
