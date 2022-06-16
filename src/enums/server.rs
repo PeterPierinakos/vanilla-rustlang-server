@@ -10,6 +10,28 @@ pub enum StatusCode {
     MethodNotAllowed,
 }
 
+impl<'a> StatusCode {
+    pub fn as_u16(&self) -> u16 {
+        match self {
+            StatusCode::OK => 200,
+            StatusCode::BadRequest => 400,
+            StatusCode::NotFound => 404,
+            StatusCode::InternalServerError => 500,
+            StatusCode::MethodNotAllowed => 405,
+        }
+    }
+
+    pub fn as_str(&self) -> &'a str {
+        match self {
+            StatusCode::OK => "OK",
+            StatusCode::BadRequest => "Bad Request",
+            StatusCode::NotFound => "Not Found",
+            StatusCode::InternalServerError => "Internal Server Error",
+            StatusCode::MethodNotAllowed => "Method Not Allowed",
+        }
+    }
+}
+
 #[allow(dead_code)]
 pub enum ServerError {
     ParseIntegerError(ParseIntError),
