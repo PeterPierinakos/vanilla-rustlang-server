@@ -24,16 +24,13 @@ pub fn read_stream<'a>(
 }
 
 pub fn parse_utf8<'a>(
-    headers: &'a Header,
+    headers: &'a RefCell<Header>,
     buf: &'a [u8; 1024],
 ) -> Result<String, ErrorResponse<'a>> {
     let parsed_utf8 = str::from_utf8(buf);
 
     match parsed_utf8 {
         Ok(string) => Ok(string.to_string()),
-        Err(err) => Err((
-            RefCell::from(headers.clone()),
-            ServerError::ParseUtf8Error(err),
-        )),
+        Err(err) => Err((headers.clone(), ServerError::ParseUtf8Error(err))),
     }
 }

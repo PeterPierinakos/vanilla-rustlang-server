@@ -16,12 +16,14 @@ use std::net::{TcpListener, TcpStream};
 use std::thread;
 use std::{fs, fs::File, fs::OpenOptions};
 
+use super::headers::Header;
+
 fn multithread_handle_connection<'a>(cors: Cors, stream: &'a mut TcpStream) -> ServerResponse<'a> {
     let (req_headers, buf) = read_stream(stream)?;
 
-    let buf_utf8 = parse_utf8(&req_headers, &buf)?;
-
     let req_headers_ref = RefCell::from(req_headers);
+
+    let buf_utf8 = parse_utf8(&req_headers_ref, &buf)?;
 
     let origin = match req_headers_ref.borrow().get("Origin") {
         Some(header) => header.to_string(),
@@ -42,30 +44,7 @@ fn multithread_handle_connection<'a>(cors: Cors, stream: &'a mut TcpStream) -> S
         )
         .unwrap();
 
-    if !cors.method_is_allowed(&buf_utf8) {
-        return Ok((req_headers_ref, StatusCode::MethodNotAllowed, None));
-    }
-
-    let mut uri = URI::new();
-
-    uri.find(&buf_utf8);
-
-    if uri.get() == &None {
-        return Ok((req_headers_ref, StatusCode::BadRequest, None));
-    };
-
-    let requested_content = fs::read_to_string(format!(
-        "{ABSOLUTE_STATIC_CONTENT_PATH}/{}",
-        uri.get().clone().unwrap()
-    ));
-    let response = match requested_content {
-        Ok(file) => file,
-        Err(_err) => {
-            return Ok((req_headers_ref, StatusCode::NotFound, None));
-        }
-    };
-
-    Ok((req_headers_ref, StatusCode::OK, Some(response)))
+    main_logic(req_headers_ref, buf_utf8, cors, stream)
 }
 
 fn singlethread_handle_connection<'a>(
@@ -93,24 +72,17 @@ fn singlethread_handle_connection<'a>(
         },
     );
 
-    let buf_utf8 = parse_utf8(&req_headers_ref.borrow(), &buf)?;
+    let buf_utf8 = parse_utf8(&req_headers_ref, &buf)?;
 
-    if !logfile.is_none() {
-        logfile
-            .as_ref()
-            .unwrap()
-            .write_all(
-                format!(
-                    "REQUEST AT {}\nREQUEST IP ADDRESS: {}\nINFO: {}\n===========\n",
-                    generate_unixtime(),
-                    stream.local_addr().unwrap(),
-                    buf_utf8
-                )
-                .as_bytes(),
-            )
-            .unwrap();
-    }
+    main_logic(req_headers_ref, buf_utf8, cors, stream)
+}
 
+fn main_logic<'a>(
+    req_headers_ref: RefCell<Header>,
+    buf_utf8: String,
+    cors: Cors,
+    stream: &'a TcpStream,
+) -> ServerResponse<'a> {
     if !cors.method_is_allowed(&buf_utf8) {
         return Ok((req_headers_ref, StatusCode::MethodNotAllowed, None));
     }
