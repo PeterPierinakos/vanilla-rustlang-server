@@ -44,6 +44,7 @@ pub fn response_success(req_headers: RefCell<Header>, file: String) -> String {
 
     let mut response = ResponseBuilder::new();
 
+    response.apply_security_headers();
     response.detect_protocol();
     response.body(file.as_str());
     response.status_code(StatusCode::OK);
@@ -66,6 +67,7 @@ pub fn response_400(req_headers: RefCell<Header>) -> String {
 
     let file = find_file("400.html");
 
+    response.apply_security_headers();
     response.detect_protocol();
     response.body(file.as_str());
     response.status_code(StatusCode::OK);
@@ -88,6 +90,7 @@ pub fn response_404(req_headers: RefCell<Header>) -> String {
 
     let file = find_file("404.html");
 
+    response.apply_security_headers();
     response.detect_protocol();
     response.body(file.as_str());
     response.status_code(StatusCode::OK);
@@ -110,6 +113,7 @@ pub fn response_405(req_headers: RefCell<Header>) -> String {
 
     let file = find_file("405.html");
 
+    response.apply_security_headers();
     response.detect_protocol();
     response.body(file.as_str());
     response.status_code(StatusCode::OK);
@@ -132,6 +136,7 @@ pub fn response_500(req_headers: RefCell<Header>) -> String {
 
     let file = find_file("500.html");
 
+    response.apply_security_headers();
     response.detect_protocol();
     response.body(file.as_str());
     response.status_code(StatusCode::OK);
