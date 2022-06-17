@@ -17,6 +17,7 @@ VRS is a simple, minimal, free and open source static web server written in Rust
 - Customizable HTTP responses (200, 400 & 404)
 - Guarantee to compile on all platforms (recommended: Linux or BSD)
 - Easy customizability via its configuration file
+- Security headers out of the box (origin attacks, iframe attacks, clickjacking etc.)
 - HTTP/1.1 and HTTP/2 standard protocol versions (during development, it's recommended to use HTTP/1.1 because that's the only one Postman HTTP client supports.)
 - Basic systemd service
 - Logging (singlethread only.)
