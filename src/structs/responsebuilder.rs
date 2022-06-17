@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::configuration::HTTP_PROTOCOL_VERSION;
+use crate::configuration::{ALLOW_IFRAMES, HTTP_PROTOCOL_VERSION, SECURITY_HEADERS};
 use crate::enums::http::HttpProtocolVersion;
 use crate::enums::server::StatusCode;
 use crate::util::headers::Header;
@@ -28,6 +28,35 @@ impl<'a> ResponseBuilder<'a> {
         } else {
             self.protocol = Some("HTTP/2");
         }
+    }
+
+    /* Headers to prevent common attacks */
+    /*
+
+    List of security headers included:
+    * X-Content-Type-Options
+    * X-Frame-Options
+    * Cross-Origin-Resource-Policy
+
+    */
+    pub fn apply_security_headers(&mut self) {
+        if !SECURITY_HEADERS {
+            return;
+        }
+
+        /* Prevent malicious HTML */
+        self.add_header("X-Content-Type-Options".to_string(), "nosniff".to_string());
+
+        /* Prevent clickjacking */
+        if !ALLOW_IFRAMES {
+            self.add_header("X-Frame-Options".to_string(), "DENY".to_string());
+        }
+
+        /* Prevent embedding resources from another origin */
+        self.add_header(
+            "Cross-Origin-Resource-Policy".to_string(),
+            "same-origin".to_string(),
+        );
     }
 
     pub fn status_code(&mut self, status: StatusCode) {

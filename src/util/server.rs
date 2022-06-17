@@ -128,6 +128,10 @@ pub fn start_server(unixtime: u64) {
         None
     };
 
+    if !SECURITY_HEADERS {
+        println!("Production note: security headers are currently turned off, keep it enabled in production!")
+    }
+
     for stream in listener.incoming() {
         let mut stream = stream.unwrap();
 
