@@ -5,7 +5,7 @@ use crate::util::license::print_license_info;
 use crate::util::response::{handle_response, ServerResponse};
 use crate::util::socket::{parse_utf8, read_stream};
 use crate::util::time::generate_unixtime;
-use std::cell::RefCell;
+
 use std::fs::{self, File};
 use std::io::Write;
 use std::net::TcpStream;
@@ -67,19 +67,16 @@ impl Server<'_> {
     }
 
     fn multithread_handle_connection<'a>(&self, stream: &'a mut TcpStream) -> ServerResponse<'a> {
-        let (req_headers, buf) = read_stream(stream)?;
+        let (mut req_headers, buf) = read_stream(stream)?;
 
-        let req_headers_ref = RefCell::from(req_headers);
+        let buf_utf8 = parse_utf8(&req_headers, &buf)?;
 
-        let buf_utf8 = parse_utf8(&req_headers_ref, &buf)?;
-
-        let origin = match req_headers_ref.borrow().get("Origin") {
+        let origin = match req_headers.get("Origin") {
             Some(header) => header.to_string(),
             None => "null".to_string(),
         };
 
-        req_headers_ref
-            .borrow_mut()
+        req_headers
             .insert(
                 "Access-Control-Allow-Origin".to_string(),
                 if ALLOW_ALL_ORIGINS {
@@ -92,7 +89,7 @@ impl Server<'_> {
             )
             .unwrap();
 
-        self.main_logic(req_headers_ref, buf_utf8)
+        self.main_logic(req_headers, buf_utf8)
     }
 
     fn singlethread_handle_connection<'a>(
@@ -100,16 +97,14 @@ impl Server<'_> {
         logfile: &'a Option<File>,
         stream: &'a mut TcpStream,
     ) -> ServerResponse<'a> {
-        let (req_headers, buf) = read_stream(stream)?;
+        let (mut req_headers, buf) = read_stream(stream)?;
 
-        let req_headers_ref = RefCell::from(req_headers.clone());
-
-        let origin = match req_headers_ref.borrow().get("Origin") {
+        let origin = match req_headers.get("Origin") {
             Some(header) => header.to_string(),
             None => "null".to_string(),
         };
 
-        req_headers_ref.borrow_mut().insert(
+        req_headers.insert(
             "Access-Control-Allow-Origin".to_string(),
             if ALLOW_ALL_ORIGINS {
                 "*".to_string()
@@ -120,18 +115,14 @@ impl Server<'_> {
             },
         );
 
-        let buf_utf8 = parse_utf8(&req_headers_ref, &buf)?;
+        let buf_utf8 = parse_utf8(&req_headers, &buf)?;
 
-        self.main_logic(req_headers_ref, buf_utf8)
+        self.main_logic(req_headers, buf_utf8)
     }
 
-    fn main_logic<'a>(
-        &self,
-        req_headers_ref: RefCell<Header>,
-        buf_utf8: String,
-    ) -> ServerResponse<'a> {
+    fn main_logic<'a>(&self, req_headers: Header, buf_utf8: String) -> ServerResponse<'a> {
         if !self.cors.method_is_allowed(&buf_utf8) {
-            return Ok((req_headers_ref, StatusCode::MethodNotAllowed, None));
+            return Ok((req_headers, StatusCode::MethodNotAllowed, None));
         }
 
         let mut uri = URI::new();
@@ -139,20 +130,20 @@ impl Server<'_> {
         uri.find(&buf_utf8);
 
         if uri.get() == &None {
-            return Ok((req_headers_ref, StatusCode::BadRequest, None));
+            return Ok((req_headers, StatusCode::BadRequest, None));
         };
 
-        let requested_content = fs::read_to_string(format!(
+        let requested_content = fs::File::open(format!(
             "{ABSOLUTE_STATIC_CONTENT_PATH}/{}",
             uri.get().clone().unwrap()
         ));
         let response = match requested_content {
             Ok(file) => file,
             Err(_err) => {
-                return Ok((req_headers_ref, StatusCode::NotFound, None));
+                return Ok((req_headers, StatusCode::NotFound, None));
             }
         };
 
-        Ok((req_headers_ref.clone(), StatusCode::OK, Some(response)))
+        Ok((req_headers.clone(), StatusCode::OK, Some(response)))
     }
 }

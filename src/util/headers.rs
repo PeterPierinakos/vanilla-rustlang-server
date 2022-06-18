@@ -1,4 +1,3 @@
-use std::cell::RefCell;
 use std::collections::HashMap;
 use std::str;
 
@@ -40,17 +39,8 @@ pub fn find_buf_headers<'a>(
     }
 
     if headers.is_empty() {
-        return Err((RefCell::from(headers), ServerError::BufferHeaderError));
+        return Err((headers, ServerError::BufferHeaderError));
     }
 
     Ok(headers)
-}
-
-pub fn standard_headers(file: &String) -> Header {
-    let mut headers: HashMap<String, String> = HashMap::new();
-
-    headers.insert("Content-Type".to_string(), "text/html".to_string());
-    headers.insert("Content-Length".to_string(), file.len().to_string());
-
-    headers
 }
