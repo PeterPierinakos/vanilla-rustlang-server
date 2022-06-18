@@ -9,7 +9,6 @@ pub struct Cors<'a> {
     pub allowed_origins: Option<Vec<&'a str>>,
 }
 
-#[allow(dead_code)]
 impl Cors<'_> {
     pub fn new() -> Self {
         if ALLOWED_ORIGINS.is_empty() && !ALLOW_ALL_ORIGINS {

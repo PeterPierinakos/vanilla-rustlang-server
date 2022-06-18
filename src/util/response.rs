@@ -22,8 +22,6 @@ pub fn handle_response(response: ServerResponse) -> String {
         Err((headers, ServerError::ParseUtf8Error(_))) => response_400(headers),
         Err((headers, ServerError::StreamError)) => response_500(headers),
         Err((headers, ServerError::BufferHeaderError)) => response_500(headers),
-        Err((headers, ServerError::MissingHeaderError)) => response_400(headers),
-        Err((headers, ServerError::CorsError)) => response_400(headers),
     }
 }
 

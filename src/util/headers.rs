@@ -8,7 +8,6 @@ use super::response::ErrorResponse;
 
 pub type Header = HashMap<String, String>;
 
-#[allow(dead_code)]
 pub fn find_buf_headers<'a>(
     buf: &'a [u8; 1024],
 ) -> Result<HashMap<String, String>, ErrorResponse<'a>> {

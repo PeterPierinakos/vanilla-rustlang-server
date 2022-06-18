@@ -32,14 +32,11 @@ impl<'a> StatusCode {
     }
 }
 
-#[allow(dead_code)]
 pub enum ServerError {
     ParseIntegerError(ParseIntError),
     ParseUtf8Error(Utf8Error),
     StreamError,
     BufferHeaderError,
-    MissingHeaderError,
-    CorsError,
 }
 
 impl From<ParseIntError> for ServerError {
