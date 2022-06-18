@@ -1,8 +1,6 @@
-use std::time::{SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, SystemTimeError, UNIX_EPOCH};
 
-pub fn generate_unixtime() -> u64 {
-    SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .unwrap()
-        .as_secs()
+pub fn generate_unixtime() -> Result<u64, SystemTimeError> {
+    let time = SystemTime::now().duration_since(UNIX_EPOCH)?;
+    Ok(time.as_secs())
 }

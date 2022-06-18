@@ -18,7 +18,14 @@ use std::{fs, fs::File, fs::OpenOptions};
 
 use super::headers::Header;
 
-fn multithread_handle_connection<'a>(cors: Cors, stream: &'a mut TcpStream) -> ServerResponse<'a> {
+pub fn multithread_handle_connection<'a, T, U>(
+    cors: Cors<T, U>,
+    stream: &'a mut TcpStream,
+) -> ServerResponse<'a>
+where
+    T: IntoIterator,
+    U: IntoIterator,
+{
     let (req_headers, buf) = read_stream(stream)?;
 
     let req_headers_ref = RefCell::from(req_headers);
@@ -47,11 +54,15 @@ fn multithread_handle_connection<'a>(cors: Cors, stream: &'a mut TcpStream) -> S
     main_logic(req_headers_ref, buf_utf8, cors, stream)
 }
 
-fn singlethread_handle_connection<'a>(
-    cors: Cors,
+pub fn singlethread_handle_connection<'a, T, U>(
+    cors: Cors<T, U>,
     logfile: &'a Option<File>,
     stream: &'a mut TcpStream,
-) -> ServerResponse<'a> {
+) -> ServerResponse<'a>
+where
+    T: IntoIterator,
+    U: IntoIterator,
+{
     let (req_headers, buf) = read_stream(stream)?;
 
     let req_headers_ref = RefCell::from(req_headers.clone());
@@ -77,12 +88,16 @@ fn singlethread_handle_connection<'a>(
     main_logic(req_headers_ref, buf_utf8, cors, stream)
 }
 
-fn main_logic<'a>(
+fn main_logic<'a, T, U>(
     req_headers_ref: RefCell<Header>,
     buf_utf8: String,
-    cors: Cors,
+    cors: Cors<T, U>,
     stream: &'a TcpStream,
-) -> ServerResponse<'a> {
+) -> ServerResponse<'a>
+where
+    T: IntoIterator,
+    U: IntoIterator,
+{
     if !cors.method_is_allowed(&buf_utf8) {
         return Ok((req_headers_ref, StatusCode::MethodNotAllowed, None));
     }
@@ -107,52 +122,4 @@ fn main_logic<'a>(
     };
 
     Ok((req_headers_ref.clone(), StatusCode::OK, Some(response)))
-}
-
-pub fn start_server(unixtime: u64) {
-    print_license_info();
-
-    let listener = TcpListener::bind(format!("{ADDR}:{PORT}")).unwrap();
-
-    let cors = Cors::new(HashSet::from([HttpRequestMethod::GET]));
-
-    let logfile = if SAVE_LOGS {
-        Some(
-            OpenOptions::new()
-                .append(true)
-                .create(true)
-                .open(format!("{ABSOLUTE_LOGS_PATH}/{unixtime}.txt"))
-                .expect("Unable to open logs"),
-        )
-    } else {
-        None
-    };
-
-    if !SECURITY_HEADERS {
-        println!("Production note: security headers are currently turned off, keep it enabled in production!")
-    }
-
-    for stream in listener.incoming() {
-        let mut stream = stream.unwrap();
-
-        let cors_ref = cors.clone();
-
-        if MULTITHREADING {
-            thread::spawn(move || {
-                let handled = multithread_handle_connection(cors_ref, &mut stream);
-
-                let response = handle_response(handled);
-
-                stream.write(&response.as_bytes()).unwrap();
-                stream.flush().unwrap();
-            });
-        } else {
-            let handled = singlethread_handle_connection(cors_ref, &logfile, &mut stream);
-
-            let response = handle_response(handled);
-
-            stream.write(&response.as_bytes()).unwrap();
-            stream.flush().unwrap();
-        }
-    }
 }
