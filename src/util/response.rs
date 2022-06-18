@@ -149,7 +149,7 @@ pub fn response_500(req_headers: RefCell<Header>) -> String {
 }
 
 fn find_file(filename: &str) -> String {
-    let url = [ABSOLUTE_LOGS_PATH, filename].concat();
+    let url = [ABSOLUTE_STATIC_CONTENT_PATH, "/", filename].concat();
 
     let file = fs::read_to_string(&url)
         .expect(format!("{filename} file doesn't exist ('{}')", &url).as_str());
