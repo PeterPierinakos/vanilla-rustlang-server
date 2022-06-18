@@ -6,6 +6,10 @@
 
 There are many useful "settings" VRS provides in order to customize the web server for your need. All the useful configuration options for VRS can be found in the configuration.rs file inside src.
 
+### Are the default configurations safe?
+
+By default, we have set the configuration to be production-ready so that you do not have to tinker with the settings a lot. Do not be a fraid to leave the configuration as it is, it is secure enough by default. Certain configurations such as SECURITY_HEADERS should only be turned off if you know what you are doing.
+
 ### Configurations in configuration.rs explained
 
 - ABSOLUTE_STATIC_CONTENT_PATH
@@ -43,3 +47,15 @@ Specify whether you want to allow external web servers (outside your local netwo
 - ALLOWED_ORIGINS (CORS)
 
 If you don't want to allow all origins as explained above, you may also just allow specific origins to fetch data from the server. If you want to block all origins, set ALLOW_ALL_ORIGINS to false and leave the ALLOWED_ORIGINS array empty.
+
+- ALLOWED_METHODS
+
+Use to specify which HTTP methods you wish to allow. Must contain atleast one. Most of the time you only need the GET method.
+
+- SECURITY_HEADERS
+
+You should not turn this off. When enabled requests are sent some additional HTTP headers in order to prevent common attacks such as clickjacking.
+
+- ALLOW_IFRAMES
+
+Enable if you want to allow other web apps to embed your website inside them. May make common attacks possible, not recommended to enable unless necessary.
