@@ -118,7 +118,8 @@ TIME: {}
                         generate_unixtime().unwrap()
                     )
                     .as_bytes(),
-                );
+                )
+                .unwrap();
             }
             None => {}
         }
