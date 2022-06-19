@@ -7,9 +7,7 @@ use super::response::ErrorResponse;
 
 pub type Header = HashMap<String, String>;
 
-pub fn find_buf_headers<'a>(
-    buf: &'a [u8; 1024],
-) -> Result<HashMap<String, String>, ErrorResponse<'a>> {
+pub fn find_buf_headers(buf: &[u8; 1024]) -> Result<HashMap<String, String>, ErrorResponse> {
     let buffer_c = str::from_utf8(buf).unwrap();
 
     let mut headers: HashMap<String, String> = HashMap::new();

@@ -34,7 +34,7 @@ impl Server<'_> {
 
         let listener = TcpListener::bind(format!("{ADDR}:{PORT}")).unwrap();
 
-        let logfile = if SAVE_LOGS {
+        let mut logfile = if SAVE_LOGS {
             Some(
                 OpenOptions::new()
                     .append(true)
@@ -54,9 +54,9 @@ impl Server<'_> {
             let mut stream = stream.unwrap();
 
             if MULTITHREADING {
-                panic!("Multithreading is currently disabled for future rewrite.");
+                panic!("Multithreading is currently disabled for a future rewrite.");
             } else {
-                let handled = self.singlethread_handle_connection(&logfile, &mut stream);
+                let handled = self.singlethread_handle_connection(&mut logfile, &mut stream);
 
                 let response = handle_response(handled);
 
@@ -92,17 +92,36 @@ impl Server<'_> {
         self.main_logic(req_headers, buf_utf8)
     }
 
-    fn singlethread_handle_connection<'a>(
+    fn singlethread_handle_connection(
         &self,
-        logfile: &'a Option<File>,
-        stream: &'a mut TcpStream,
-    ) -> ServerResponse<'a> {
+        logfile: &mut Option<File>,
+        stream: &mut TcpStream,
+    ) -> ServerResponse {
         let (mut req_headers, buf) = read_stream(stream)?;
 
         let origin = match req_headers.get("Origin") {
             Some(header) => header.to_string(),
             None => "null".to_string(),
         };
+
+        // god the logging is so ugly why please god help me savior
+        match logfile {
+            Some(file) => {
+                file.write_all(
+                    format!(
+                        "
+-- NEW REQUEST --
+HEADERS: {:?}
+TIME: {}
+                    ",
+                        req_headers,
+                        generate_unixtime().unwrap()
+                    )
+                    .as_bytes(),
+                );
+            }
+            None => {}
+        }
 
         req_headers.insert(
             "Access-Control-Allow-Origin".to_string(),
