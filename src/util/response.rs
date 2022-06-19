@@ -5,11 +5,11 @@ use crate::structs::responsebuilder::ResponseBuilder;
 use std::fs::{self, File};
 use std::io::Read;
 
-pub type ErrorResponse<'a> = (Header, ServerError);
-pub type OkResponse<'a> = (Header, StatusCode, Option<File>);
+pub type ErrorResponse = (Header, ServerError);
+pub type OkResponse = (Header, StatusCode, Option<File>);
 
 /* Headers, Status Code, Response File */
-pub type ServerResponse<'a> = Result<OkResponse<'a>, ErrorResponse<'a>>;
+pub type ServerResponse<'a> = Result<OkResponse, ErrorResponse>;
 
 pub fn handle_response(response: ServerResponse) -> String {
     match response {
