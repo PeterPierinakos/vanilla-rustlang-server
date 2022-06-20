@@ -3,4 +3,8 @@ name = "vrs"
 version = "1.1.0"
 edition = "2021"
 
+[[bin]]
+path = "src/bin/server.rs"
+name = "vrs"
+
 [dependencies]

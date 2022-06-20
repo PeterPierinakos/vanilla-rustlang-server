@@ -78,6 +78,8 @@ impl<'a> ResponseBuilder<'a> {
 
         response.push_str(self.protocol.unwrap());
         response.push(' ');
+        response.push_str(str_status.to_string().as_str());
+        response.push(' ');
 
         response.push_str(match self.status_code.unwrap() {
             200 => "OK",
@@ -88,8 +90,6 @@ impl<'a> ResponseBuilder<'a> {
             _ => panic!("Invalid status code provided"),
         });
 
-        response.push_str(str_status.to_string().as_str());
-
         for (key, val) in self.headers.iter() {
             response.push_str("\r\n");
             response.push_str(format!("{}:{}", key, val).as_str());
@@ -97,6 +97,8 @@ impl<'a> ResponseBuilder<'a> {
 
         response.push_str("\r\n\r\n");
         response.push_str(self.body.unwrap());
+
+        println!("{}", response);
 
         response
     }

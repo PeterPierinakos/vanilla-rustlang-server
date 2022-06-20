@@ -1,12 +1,9 @@
-mod configuration;
-mod enums;
-mod structs;
-mod util;
+#![deny(unsafe_code)]
 
 use std::sync::Arc;
 
-use configuration::MULTITHREADING;
-use structs::server::Server;
+use vrs::configuration::MULTITHREADING;
+use vrs::structs::server::Server;
 
 pub fn main() -> std::io::Result<()> {
     let server = Arc::new(Server::new()?);

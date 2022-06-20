@@ -45,7 +45,6 @@ impl Worker {
             let message = rx.lock().unwrap().recv().unwrap();
             match message {
                 Message::NewJob(job) => {
-                    println!("Worker {} got a job; executing.", id);
                     job();
                 } /* New messages may be added in a future update for server improving graceful shutdown */
             }
