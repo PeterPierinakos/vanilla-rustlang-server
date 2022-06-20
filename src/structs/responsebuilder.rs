@@ -98,8 +98,6 @@ impl<'a> ResponseBuilder<'a> {
         response.push_str("\r\n\r\n");
         response.push_str(self.body.unwrap());
 
-        println!("{}", response);
-
         response
     }
 }
