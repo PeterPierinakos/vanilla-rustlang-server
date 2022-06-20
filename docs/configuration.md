@@ -36,6 +36,10 @@ Boolean for specifying whether you want the server to save request logs or not.
 
 Specify whether you want the server to use multiple threads (workers) or not. Logs aren't supported when using this functionality.
 
+- NUM_OF_THREADS
+
+If MULTITHREADING is enabled, you may enter a valid (unsigned integer) number greater than 0 in order to specify the number of threads the server should cap at. If you specify 0, the server will panic because that is an invalid number of threads.
+
 - HTTP_PROTOCOL_VERSION
 
 Enum for specifying whether you want to use HTTP/1.1 or HTTP/2. Note that for API clients such as Postman HTTP/2 is not supported.
