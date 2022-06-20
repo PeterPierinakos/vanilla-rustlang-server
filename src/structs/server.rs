@@ -8,6 +8,7 @@ use crate::util::time::generate_unixtime;
 
 use std::fs::{self, File};
 use std::io::Write;
+use std::io::{Error, ErrorKind};
 use std::net::TcpStream;
 use std::{fs::OpenOptions, net::TcpListener};
 
@@ -29,22 +30,30 @@ impl Server<'_> {
         }
     }
 
-    pub fn start(&mut self) {
+    pub fn start(&mut self) -> Result<(), std::io::Error> {
         print_license_info();
 
         let listener = TcpListener::bind(format!("{ADDR}:{PORT}")).unwrap();
 
-        let mut logfile = if SAVE_LOGS {
-            Some(
-                OpenOptions::new()
-                    .append(true)
-                    .create(true)
-                    .open([ABSOLUTE_LOGS_PATH, "/", self.unixtime.to_string().as_str()].concat())
-                    .expect("Failed to create logfile"),
-            )
-        } else {
-            None
-        };
+        /* Create the log file and return error if it fails creating or opening existing one */
+        let mut logfile =
+            if SAVE_LOGS {
+                let result =
+                    Some(OpenOptions::new().append(true).create(true).open(
+                        [ABSOLUTE_LOGS_PATH, "/", self.unixtime.to_string().as_str()].concat(),
+                    ));
+                match result.expect("Something went wrong whilst unwrapping the logfile.") {
+                    Ok(file) => Some(file),
+                    Err(_) => {
+                        println!(
+                            "Warning: Failed creating or opening logfile. Logs will not be saved."
+                        );
+                        None
+                    }
+                }
+            } else {
+                None
+            };
 
         if !SECURITY_HEADERS {
             println!("Production note: security headers are currently turned off, keep it enabled in production!")
@@ -58,12 +67,15 @@ impl Server<'_> {
             } else {
                 let handled = self.singlethread_handle_connection(&mut logfile, &mut stream);
 
+                /* .handle_response() will handles the client errors */
                 let response = handle_response(handled);
 
                 stream.write(&response.as_bytes()).unwrap();
                 stream.flush().unwrap();
             }
         }
+
+        Ok(())
     }
 
     fn multithread_handle_connection<'a>(&self, stream: &'a mut TcpStream) -> ServerResponse<'a> {
@@ -104,10 +116,9 @@ impl Server<'_> {
             None => "null".to_string(),
         };
 
-        // god the logging is so ugly why please god help me savior
         match logfile {
             Some(file) => {
-                file.write_all(
+                match file.write_all(
                     format!(
                         "
 -- NEW REQUEST --
@@ -118,8 +129,12 @@ TIME: {}
                         generate_unixtime().unwrap()
                     )
                     .as_bytes(),
-                )
-                .unwrap();
+                ) {
+                    Ok(()) => {}
+                    Err(_) => {
+                        println!("Warning: something went wrong whilst writing to the logfile. Maybe it's too large?");
+                    }
+                }
             }
             None => {}
         }
