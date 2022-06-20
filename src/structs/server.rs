@@ -6,21 +6,25 @@ use crate::util::response::{handle_response, ServerResponse};
 use crate::util::socket::{parse_utf8, read_stream};
 use crate::util::time::generate_unixtime;
 
+use std::cell::RefCell;
 use std::fs::{self, File};
 use std::io::Write;
 use std::io::{Error, ErrorKind};
 use std::net::TcpStream;
+use std::sync::{Arc, Mutex};
+use std::thread;
 use std::{fs::OpenOptions, net::TcpListener};
 
 use super::cors::Cors;
+use super::thread::ThreadPool;
 use super::uri::URI;
 
-pub struct Server<'a> {
+pub struct Server {
     unixtime: u64,
-    cors: Cors<'a>,
+    cors: Cors<'static>,
 }
 
-impl Server<'_> {
+impl Server {
     pub fn new() -> Self {
         let unixtime = generate_unixtime().expect("Failed generating system unix time");
 
@@ -30,7 +34,36 @@ impl Server<'_> {
         }
     }
 
-    pub fn start(&mut self) -> Result<(), std::io::Error> {
+    pub fn start_multithread(self: Arc<Self>) -> Result<(), std::io::Error> {
+        print_license_info();
+
+        let listener = TcpListener::bind(format!("{ADDR}:{PORT}")).unwrap();
+
+        if !SECURITY_HEADERS {
+            println!("Production note: security headers are currently turned off, keep it enabled in production!")
+        }
+
+        let pool = ThreadPool::new(NUM_OF_THREADS).unwrap();
+
+        for stream in listener.incoming() {
+            let self_ref = Arc::clone(&self);
+
+            pool.execute(move || {
+                let mut stream = stream.unwrap();
+                let handled = Self::multithread_handle_connection(&self_ref, &mut stream);
+
+                /* .handle_response() will handles the client errors */
+                let response = handle_response(handled);
+
+                stream.write(&response.as_bytes()).unwrap();
+                stream.flush().unwrap();
+            })
+        }
+
+        Ok(())
+    }
+
+    pub fn start_singlethread(&self) -> Result<(), std::io::Error> {
         print_license_info();
 
         let listener = TcpListener::bind(format!("{ADDR}:{PORT}")).unwrap();
@@ -62,23 +95,19 @@ impl Server<'_> {
         for stream in listener.incoming() {
             let mut stream = stream.unwrap();
 
-            if MULTITHREADING {
-                panic!("Multithreading is currently disabled for a future rewrite.");
-            } else {
-                let handled = self.singlethread_handle_connection(&mut logfile, &mut stream);
+            let handled = self.singlethread_handle_connection(&mut logfile, &mut stream);
 
-                /* .handle_response() will handles the client errors */
-                let response = handle_response(handled);
+            /* .handle_response() will handles the client errors */
+            let response = handle_response(handled);
 
-                stream.write(&response.as_bytes()).unwrap();
-                stream.flush().unwrap();
-            }
+            stream.write(&response.as_bytes()).unwrap();
+            stream.flush().unwrap();
         }
 
         Ok(())
     }
 
-    fn multithread_handle_connection<'a>(&self, stream: &'a mut TcpStream) -> ServerResponse<'a> {
+    fn multithread_handle_connection(&self, stream: &mut TcpStream) -> ServerResponse {
         let (mut req_headers, buf) = read_stream(stream)?;
 
         let buf_utf8 = parse_utf8(&req_headers, &buf)?;
@@ -88,18 +117,16 @@ impl Server<'_> {
             None => "null".to_string(),
         };
 
-        req_headers
-            .insert(
-                "Access-Control-Allow-Origin".to_string(),
-                if ALLOW_ALL_ORIGINS {
-                    "*".to_string()
-                } else if self.cors.origin_is_allowed(&origin) {
-                    origin.to_string()
-                } else {
-                    "null".to_string()
-                },
-            )
-            .unwrap();
+        req_headers.insert(
+            "Access-Control-Allow-Origin".to_string(),
+            if ALLOW_ALL_ORIGINS {
+                "*".to_string()
+            } else if self.cors.origin_is_allowed(&origin) {
+                origin.to_string()
+            } else {
+                "null".to_string()
+            },
+        );
 
         self.main_logic(req_headers, buf_utf8)
     }
