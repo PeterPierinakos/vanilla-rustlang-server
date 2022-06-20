@@ -1,4 +1,5 @@
 use crate::configuration::*;
+use crate::util::file::get_file_extension;
 use crate::util::headers::Header;
 use crate::util::license::print_license_info;
 use crate::util::response::{handle_response, ServerResponse};
@@ -204,6 +205,10 @@ TIME: {}
             }
         };
 
-        Ok((req_headers.clone(), Some(response)))
+        Ok((
+            req_headers.clone(),
+            Some(get_file_extension(uri.get().clone().unwrap().as_str()).to_string()),
+            Some(response),
+        ))
     }
 }
