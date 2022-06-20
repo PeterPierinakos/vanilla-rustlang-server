@@ -3,7 +3,7 @@ mod enums;
 mod structs;
 mod util;
 
-use std::{io::ErrorKind, sync::Arc};
+use std::{sync::Arc};
 
 use configuration::MULTITHREADING;
 use structs::server::Server;

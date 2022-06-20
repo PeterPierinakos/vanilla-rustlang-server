@@ -5,14 +5,15 @@ type Job = Box<dyn FnOnce() + Send + 'static>;
 
 enum Message {
     NewJob(Job),
-    Terminate,
 }
 
+#[allow(dead_code)]
 pub struct ThreadPool {
     workers: Vec<Worker>,
     tx: mpsc::Sender<Message>,
 }
 
+#[allow(dead_code)]
 pub struct Worker {
     id: usize,
     thread: thread::JoinHandle<()>,
@@ -46,11 +47,7 @@ impl Worker {
                 Message::NewJob(job) => {
                     println!("Worker {} got a job; executing.", id);
                     job();
-                }
-                Message::Terminate => {
-                    println!("Worker {} was told to terminate.", id);
-                    break;
-                }
+                } /* New messages may be added in a future update for server improving graceful shutdown */
             }
         });
         Worker { id, thread }
