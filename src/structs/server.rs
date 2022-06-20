@@ -1,17 +1,15 @@
 use crate::configuration::*;
-use crate::enums::server::StatusCode;
 use crate::util::headers::Header;
 use crate::util::license::print_license_info;
 use crate::util::response::{handle_response, ServerResponse};
 use crate::util::socket::{parse_utf8, read_stream};
 use crate::util::time::generate_unixtime;
 
-
 use std::fs::{self, File};
 use std::io::Write;
 
 use std::net::TcpStream;
-use std::sync::{Arc};
+use std::sync::Arc;
 
 use std::{fs::OpenOptions, net::TcpListener};
 
@@ -25,16 +23,16 @@ pub struct Server {
 }
 
 impl Server {
-    pub fn new() -> Self {
+    pub fn new() -> std::io::Result<Self> {
         let unixtime = generate_unixtime().expect("Failed generating system unix time");
 
-        Self {
+        Ok(Self {
             unixtime: unixtime,
-            cors: Cors::new(),
-        }
+            cors: Cors::new()?,
+        })
     }
 
-    pub fn start_multithread(self: Arc<Self>) -> Result<(), std::io::Error> {
+    pub fn start_multithread(self: Arc<Self>) -> std::io::Result<()> {
         print_license_info();
 
         let listener = TcpListener::bind(format!("{ADDR}:{PORT}")).unwrap();
@@ -57,7 +55,7 @@ impl Server {
 
                 stream.write(&response.as_bytes()).unwrap();
                 stream.flush().unwrap();
-            })
+            });
         }
 
         Ok(())
@@ -184,7 +182,7 @@ TIME: {}
 
     fn main_logic<'a>(&self, req_headers: Header, buf_utf8: String) -> ServerResponse<'a> {
         if !self.cors.method_is_allowed(&buf_utf8) {
-            return Ok((req_headers, StatusCode::MethodNotAllowed, None));
+            return Err((req_headers, 405));
         }
 
         let mut uri = URI::new();
@@ -192,7 +190,7 @@ TIME: {}
         uri.find(&buf_utf8);
 
         if uri.get() == &None {
-            return Ok((req_headers, StatusCode::BadRequest, None));
+            return Err((req_headers, 400));
         };
 
         let requested_content = fs::File::open(format!(
@@ -202,10 +200,10 @@ TIME: {}
         let response = match requested_content {
             Ok(file) => file,
             Err(_err) => {
-                return Ok((req_headers, StatusCode::NotFound, None));
+                return Err((req_headers, 404));
             }
         };
 
-        Ok((req_headers.clone(), StatusCode::OK, Some(response)))
+        Ok((req_headers.clone(), Some(response)))
     }
 }

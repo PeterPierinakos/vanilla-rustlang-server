@@ -2,8 +2,8 @@ use std::collections::HashMap;
 
 use crate::configuration::{ALLOW_IFRAMES, HTTP_PROTOCOL_VERSION, SECURITY_HEADERS};
 use crate::enums::http::HttpProtocolVersion;
-use crate::enums::server::StatusCode;
 use crate::util::headers::Header;
+use crate::util::status::StatusCode;
 
 pub struct ResponseBuilder<'a> {
     protocol: Option<&'a str>,
@@ -74,14 +74,21 @@ impl<'a> ResponseBuilder<'a> {
     pub fn construct(&self) -> String {
         let mut response = String::new();
 
-        let u16_status = self.status_code.as_ref().unwrap().as_u16();
-        let str_status = self.status_code.as_ref().unwrap().as_str();
+        let str_status = self.status_code.unwrap();
 
         response.push_str(self.protocol.unwrap());
         response.push(' ');
-        response.push_str(format!("{u16_status}").as_str());
-        response.push(' ');
-        response.push_str(str_status);
+
+        response.push_str(match self.status_code.unwrap() {
+            200 => "OK",
+            400 => "Bad Request",
+            404 => "Not Found",
+            405 => "Method Not Allowed",
+            500 => "Internal Server Error",
+            _ => panic!("Invalid status code provided"),
+        });
+
+        response.push_str(str_status.to_string().as_str());
 
         for (key, val) in self.headers.iter() {
             response.push_str("\r\n");

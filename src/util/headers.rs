@@ -1,8 +1,6 @@
 use std::collections::HashMap;
 use std::str;
 
-use crate::enums::server::ServerError;
-
 use super::response::ErrorResponse;
 
 pub type Header = HashMap<String, String>;
@@ -37,7 +35,7 @@ pub fn find_buf_headers(buf: &[u8; 1024]) -> Result<HashMap<String, String>, Err
     }
 
     if headers.is_empty() {
-        return Err((headers, ServerError::BufferHeaderError));
+        return Err((headers, 400));
     }
 
     Ok(headers)
