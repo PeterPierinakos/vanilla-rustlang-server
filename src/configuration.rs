@@ -13,6 +13,8 @@ pub const PORT: u32 = 80;
 
 /* Production note: Multithreaded mode currently doesn't support logs. */
 pub const MULTITHREADING: bool = false;
+pub const NUM_OF_THREADS: usize = 2;
+
 pub const SAVE_LOGS: bool = true;
 
 pub const HTTP_PROTOCOL_VERSION: HttpProtocolVersion = HttpProtocolVersion::OneDotOne;

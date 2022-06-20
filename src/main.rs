@@ -3,13 +3,16 @@ mod enums;
 mod structs;
 mod util;
 
-use std::io::ErrorKind;
+use std::{io::ErrorKind, sync::Arc};
 
+use configuration::MULTITHREADING;
 use structs::server::Server;
 
 pub fn main() -> std::io::Result<()> {
-    let mut server = Server::new();
-
-    server.start()?;
+    let server = Arc::new(Server::new());
+    match MULTITHREADING {
+        true => server.start_multithread()?,
+        false => server.start_singlethread()?,
+    }
     Ok(())
 }
