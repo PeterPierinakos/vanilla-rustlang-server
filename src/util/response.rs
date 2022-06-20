@@ -1,4 +1,3 @@
-use super::file::get_file_extension;
 use super::headers::Header;
 use super::status::StatusCode;
 use crate::configuration::*;
