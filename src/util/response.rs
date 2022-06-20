@@ -1,27 +1,20 @@
 use super::headers::Header;
+use super::status::StatusCode;
 use crate::configuration::*;
-use crate::enums::server::{ServerError, StatusCode};
 use crate::structs::responsebuilder::ResponseBuilder;
 use std::fs::{self, File};
 use std::io::Read;
 
-pub type ErrorResponse = (Header, ServerError);
-pub type OkResponse = (Header, StatusCode, Option<File>);
+pub type ErrorResponse = (Header, StatusCode);
+pub type OkResponse = (Header, Option<File>);
 
 /* Headers, Status Code, Response File */
 pub type ServerResponse<'a> = Result<OkResponse, ErrorResponse>;
 
 pub fn handle_response(response: ServerResponse) -> String {
     match response {
-        Ok((headers, StatusCode::OK, file)) => create_response(headers, file, 200),
-        Ok((headers, StatusCode::BadRequest, _)) => create_response(headers, None, 400),
-        Ok((headers, StatusCode::MethodNotAllowed, _)) => create_response(headers, None, 405),
-        Ok((headers, StatusCode::NotFound, _)) => create_response(headers, None, 404),
-        Ok((headers, StatusCode::InternalServerError, _)) => create_response(headers, None, 500),
-        Err((headers, ServerError::ParseIntegerError(_))) => create_response(headers, None, 400),
-        Err((headers, ServerError::ParseUtf8Error(_))) => create_response(headers, None, 400),
-        Err((headers, ServerError::StreamError)) => create_response(headers, None, 400),
-        Err((headers, ServerError::BufferHeaderError)) => create_response(headers, None, 400),
+        Ok((headers, file)) => create_response(headers, file, 200),
+        Err((headers, status)) => create_response(headers, None, status),
     }
 }
 
@@ -59,7 +52,7 @@ pub fn create_response(req_headers: Header, file: Option<File>, status_code: u16
 
     response.detect_protocol();
     response.body(file_buf.as_str());
-    response.status_code(StatusCode::OK);
+    response.status_code(200);
     response.add_header("Content-Type".into(), "text/html".into());
     response.add_header("Content-Length".into(), file_buf.len().to_string());
     response.construct()
