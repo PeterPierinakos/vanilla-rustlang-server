@@ -6,13 +6,13 @@ use crate::util::response::{handle_response, ServerResponse};
 use crate::util::socket::{parse_utf8, read_stream};
 use crate::util::time::generate_unixtime;
 
-use std::cell::RefCell;
+
 use std::fs::{self, File};
 use std::io::Write;
-use std::io::{Error, ErrorKind};
+
 use std::net::TcpStream;
-use std::sync::{Arc, Mutex};
-use std::thread;
+use std::sync::{Arc};
+
 use std::{fs::OpenOptions, net::TcpListener};
 
 use super::cors::Cors;
