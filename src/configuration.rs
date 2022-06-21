@@ -1,7 +1,3 @@
-/*
-Documentation in manual.html inside media/
-*/
-
 use crate::enums::http::HttpProtocolVersion;
 
 pub const ABSOLUTE_STATIC_CONTENT_PATH: &str = "/var/www/static";
