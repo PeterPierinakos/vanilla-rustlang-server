@@ -7,9 +7,9 @@ use vrs::structs::server::Server;
 
 pub fn main() -> std::io::Result<()> {
     let server = Arc::new(Server::new()?);
-    match MULTITHREADING {
-        true => server.start_multithread()?,
-        false => server.start_singlethread()?,
+    if MULTITHREADING {
+        server.start_multithread()
+    } else {
+        server.start_singlethread()
     }
-    Ok(())
 }

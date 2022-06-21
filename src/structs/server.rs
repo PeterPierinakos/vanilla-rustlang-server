@@ -28,7 +28,7 @@ impl Server {
         let unixtime = generate_unixtime().expect("Failed generating system unix time");
 
         Ok(Self {
-            unixtime: unixtime,
+            unixtime,
             cors: Cors::new()?,
         })
     }
@@ -39,7 +39,7 @@ impl Server {
         let listener = TcpListener::bind(format!("{ADDR}:{PORT}")).unwrap();
 
         if !SECURITY_HEADERS {
-            println!("Production note: security headers are currently turned off, keep it enabled in production!")
+            println!("Production note: security headers are currently turned off, keep it enabled in production!");
         }
 
         let pool = ThreadPool::new(NUM_OF_THREADS).unwrap();
@@ -54,7 +54,7 @@ impl Server {
                 /* .handle_response() will handles the client errors */
                 let response = handle_response(handled);
 
-                stream.write(&response.as_bytes()).unwrap();
+                stream.write_all(response.as_bytes()).unwrap();
                 stream.flush().unwrap();
             });
         }
@@ -68,27 +68,25 @@ impl Server {
         let listener = TcpListener::bind(format!("{ADDR}:{PORT}")).unwrap();
 
         /* Create the log file and return error if it fails creating or opening existing one */
-        let mut logfile =
-            if SAVE_LOGS {
-                let result =
-                    Some(OpenOptions::new().append(true).create(true).open(
-                        [ABSOLUTE_LOGS_PATH, "/", self.unixtime.to_string().as_str()].concat(),
-                    ));
-                match result.expect("Something went wrong whilst unwrapping the logfile.") {
-                    Ok(file) => Some(file),
-                    Err(_) => {
-                        println!(
-                            "Warning: Failed creating or opening logfile. Logs will not be saved."
-                        );
-                        None
-                    }
-                }
+        let mut logfile = if SAVE_LOGS {
+            let result = Some(
+                OpenOptions::new()
+                    .append(true)
+                    .create(true)
+                    .open([ABSOLUTE_LOGS_PATH, "/", self.unixtime.to_string().as_str()].concat()),
+            );
+            if let Ok(file) = result.expect("Something went wrong whilst unwrapping the logfile.") {
+                Some(file)
             } else {
+                println!("Warning: Failed creating or opening logfile. Logs will not be saved.");
                 None
-            };
+            }
+        } else {
+            None
+        };
 
         if !SECURITY_HEADERS {
-            println!("Production note: security headers are currently turned off, keep it enabled in production!")
+            println!("Production note: security headers are currently turned off, keep it enabled in production!");
         }
 
         for stream in listener.incoming() {
@@ -99,7 +97,7 @@ impl Server {
             /* .handle_response() will handles the client errors */
             let response = handle_response(handled);
 
-            stream.write(&response.as_bytes()).unwrap();
+            stream.write_all(response.as_bytes()).unwrap();
             stream.flush().unwrap();
         }
 
@@ -121,13 +119,13 @@ impl Server {
             if ALLOW_ALL_ORIGINS {
                 "*".to_string()
             } else if self.cors.origin_is_allowed(&origin) {
-                origin.to_string()
+                origin
             } else {
                 "null".to_string()
             },
         );
 
-        self.main_logic(req_headers, buf_utf8)
+        self.main_logic(req_headers, &buf_utf8)
     }
 
     fn singlethread_handle_connection(
@@ -170,7 +168,7 @@ TIME: {}
             if ALLOW_ALL_ORIGINS {
                 "*".to_string()
             } else if self.cors.origin_is_allowed(&origin) {
-                origin.to_string()
+                origin
             } else {
                 "null".to_string()
             },
@@ -178,17 +176,17 @@ TIME: {}
 
         let buf_utf8 = parse_utf8(&req_headers, &buf)?;
 
-        self.main_logic(req_headers, buf_utf8)
+        self.main_logic(req_headers, &buf_utf8)
     }
 
-    fn main_logic<'a>(&self, req_headers: Header, buf_utf8: String) -> ServerResponse<'a> {
-        if !self.cors.method_is_allowed(&buf_utf8) {
+    fn main_logic<'a>(&self, req_headers: Header, buf_utf8: &str) -> ServerResponse<'a> {
+        if !self.cors.method_is_allowed(buf_utf8) {
             return Err((req_headers, 405));
         }
 
         let mut uri = URI::new();
 
-        uri.find(&buf_utf8);
+        uri.find(buf_utf8);
 
         if uri.get() == &None {
             return Err((req_headers, 400));
@@ -206,7 +204,7 @@ TIME: {}
         };
 
         Ok((
-            req_headers.clone(),
+            req_headers,
             Some(get_file_extension(uri.get().clone().unwrap().as_str()).to_string()),
             Some(response),
         ))
