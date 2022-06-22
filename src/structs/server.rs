@@ -2,7 +2,7 @@ use crate::configuration::*;
 use crate::util::file::get_file_extension;
 use crate::util::headers::Header;
 use crate::util::license::print_license_info;
-use crate::util::response::{handle_response, ServerResponse};
+use crate::util::response::{create_dir_response, create_file_response};
 use crate::util::socket::{parse_utf8, read_stream};
 use crate::util::time::generate_unixtime;
 
@@ -10,6 +10,7 @@ use std::fs::{self, File};
 use std::io::Write;
 
 use std::net::TcpStream;
+use std::path::Path;
 use std::sync::Arc;
 
 use std::{fs::OpenOptions, net::TcpListener};
@@ -28,7 +29,7 @@ impl Server {
         let unixtime = generate_unixtime().expect("Failed generating system unix time");
 
         Ok(Self {
-            unixtime,
+            unixtime: unixtime,
             cors: Cors::new()?,
         })
     }
@@ -39,7 +40,7 @@ impl Server {
         let listener = TcpListener::bind(format!("{ADDR}:{PORT}")).unwrap();
 
         if !SECURITY_HEADERS {
-            println!("Production note: security headers are currently turned off, keep it enabled in production!");
+            println!("Production note: security headers are currently turned off, keep it enabled in production!")
         }
 
         let pool = ThreadPool::new(NUM_OF_THREADS).unwrap();
@@ -49,12 +50,10 @@ impl Server {
 
             pool.execute(move || {
                 let mut stream = stream.unwrap();
-                let handled = Self::multithread_handle_connection(&self_ref, &mut stream);
+                let response = Self::multithread_handle_connection(&self_ref, &mut stream);
 
-                /* .handle_response() will handles the client errors */
-                let response = handle_response(handled);
-
-                stream.write_all(response.as_bytes()).unwrap();
+                // The thread currently panics if the response returns an error. TODO: fix the possible error.
+                stream.write(&response.unwrap().as_bytes()).unwrap();
                 stream.flush().unwrap();
             });
         }
@@ -68,46 +67,46 @@ impl Server {
         let listener = TcpListener::bind(format!("{ADDR}:{PORT}")).unwrap();
 
         /* Create the log file and return error if it fails creating or opening existing one */
-        let mut logfile = if SAVE_LOGS {
-            let result = Some(
-                OpenOptions::new()
-                    .append(true)
-                    .create(true)
-                    .open([ABSOLUTE_LOGS_PATH, "/", self.unixtime.to_string().as_str()].concat()),
-            );
-            if let Ok(file) = result.expect("Something went wrong whilst unwrapping the logfile.") {
-                Some(file)
+        let mut logfile =
+            if SAVE_LOGS {
+                let result =
+                    Some(OpenOptions::new().append(true).create(true).open(
+                        [ABSOLUTE_LOGS_PATH, "/", self.unixtime.to_string().as_str()].concat(),
+                    ));
+                match result.expect("Something went wrong whilst unwrapping the logfile.") {
+                    Ok(file) => Some(file),
+                    Err(_) => {
+                        println!(
+                            "Warning: Failed creating or opening logfile. Logs will not be saved."
+                        );
+                        None
+                    }
+                }
             } else {
-                println!("Warning: Failed creating or opening logfile. Logs will not be saved.");
                 None
-            }
-        } else {
-            None
-        };
+            };
 
         if !SECURITY_HEADERS {
-            println!("Production note: security headers are currently turned off, keep it enabled in production!");
+            println!("Production note: security headers are currently turned off, keep it enabled in production!")
         }
 
         for stream in listener.incoming() {
             let mut stream = stream.unwrap();
 
-            let handled = self.singlethread_handle_connection(&mut logfile, &mut stream);
+            let response = self.singlethread_handle_connection(&mut logfile, &mut stream)?;
 
-            /* .handle_response() will handles the client errors */
-            let response = handle_response(handled);
-
-            stream.write_all(response.as_bytes()).unwrap();
+            stream.write(&response.as_bytes()).unwrap();
             stream.flush().unwrap();
         }
 
         Ok(())
     }
 
-    fn multithread_handle_connection(&self, stream: &mut TcpStream) -> ServerResponse {
-        let (mut req_headers, buf) = read_stream(stream)?;
-
-        let buf_utf8 = parse_utf8(&req_headers, &buf)?;
+    fn multithread_handle_connection(&self, stream: &mut TcpStream) -> std::io::Result<String> {
+        let (mut req_headers, buf) = match read_stream(stream) {
+            Ok((headers, buf)) => (headers, buf),
+            Err((headers, status)) => return create_file_response(headers, None, None, status),
+        };
 
         let origin = match req_headers.get("Origin") {
             Some(header) => header.to_string(),
@@ -119,21 +118,29 @@ impl Server {
             if ALLOW_ALL_ORIGINS {
                 "*".to_string()
             } else if self.cors.origin_is_allowed(&origin) {
-                origin
+                origin.to_string()
             } else {
                 "null".to_string()
             },
         );
 
-        self.main_logic(req_headers, &buf_utf8)
+        let buf_utf8 = match parse_utf8(&req_headers, &buf) {
+            Ok(utf8) => utf8,
+            Err((headers, status)) => create_file_response(headers, None, None, status)?,
+        };
+
+        self.main_logic(req_headers, buf_utf8)
     }
 
     fn singlethread_handle_connection(
         &self,
         logfile: &mut Option<File>,
         stream: &mut TcpStream,
-    ) -> ServerResponse {
-        let (mut req_headers, buf) = read_stream(stream)?;
+    ) -> std::io::Result<String> {
+        let (mut req_headers, buf) = match read_stream(stream) {
+            Ok((headers, buf)) => (headers, buf),
+            Err((headers, status)) => return create_file_response(headers, None, None, status),
+        };
 
         let origin = match req_headers.get("Origin") {
             Some(header) => header.to_string(),
@@ -168,29 +175,47 @@ TIME: {}
             if ALLOW_ALL_ORIGINS {
                 "*".to_string()
             } else if self.cors.origin_is_allowed(&origin) {
-                origin
+                origin.to_string()
             } else {
                 "null".to_string()
             },
         );
 
-        let buf_utf8 = parse_utf8(&req_headers, &buf)?;
+        let buf_utf8 = match parse_utf8(&req_headers, &buf) {
+            Ok(utf8) => utf8,
+            Err((headers, status)) => create_file_response(headers, None, None, status)?,
+        };
 
-        self.main_logic(req_headers, &buf_utf8)
+        self.main_logic(req_headers, buf_utf8)
     }
 
-    fn main_logic<'a>(&self, req_headers: Header, buf_utf8: &str) -> ServerResponse<'a> {
-        if !self.cors.method_is_allowed(buf_utf8) {
-            return Err((req_headers, 405));
+    fn main_logic(&self, req_headers: Header, buf_utf8: String) -> std::io::Result<String> {
+        if !self.cors.method_is_allowed(&buf_utf8) {
+            return create_file_response(req_headers, None, None, 405);
         }
 
         let mut uri = URI::new();
 
-        uri.find(buf_utf8);
+        uri.find(&buf_utf8);
 
-        if uri.get() == &None {
-            return Err((req_headers, 400));
+        let uri_path_ref = uri.get().as_ref();
+
+        let uri_path_ref = match uri_path_ref {
+            Some(path) => path,
+            None => return create_file_response(req_headers, None, None, 400),
         };
+
+        let absolute_path = [ABSOLUTE_STATIC_CONTENT_PATH, "/", uri_path_ref].concat();
+
+        let path = Path::new(&absolute_path);
+
+        if path.is_dir() {
+            let path_iter = match path.read_dir() {
+                Ok(iter) => iter,
+                Err(_) => return create_file_response(req_headers, None, None, 500),
+            };
+            return create_dir_response(req_headers, path_iter);
+        }
 
         let requested_content = fs::File::open(format!(
             "{ABSOLUTE_STATIC_CONTENT_PATH}/{}",
@@ -198,15 +223,14 @@ TIME: {}
         ));
         let response = match requested_content {
             Ok(file) => file,
-            Err(_err) => {
-                return Err((req_headers, 404));
-            }
+            Err(_err) => return create_file_response(req_headers, None, None, 404),
         };
 
-        Ok((
-            req_headers,
+        create_file_response(
+            req_headers.clone(),
             Some(get_file_extension(uri.get().clone().unwrap().as_str()).to_string()),
             Some(response),
-        ))
+            200,
+        )
     }
 }
