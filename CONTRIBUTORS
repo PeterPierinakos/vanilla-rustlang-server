@@ -1,8 +1,11 @@
 # All future contributors of this project will be put here according to their contributions.
 
 Contributions from issue requests:
+
 - tibordp, reported path traversal vulnerability (issue #3)
 - mcronce, reported optimal solution for path traversal vulnerability (issue #3)
 - maciejhirsz, reported unwraps that cause the server to throw panic errors during runtime
 
 Contributions from PRs:
+
+- zombiepigdragon, clippy lints
