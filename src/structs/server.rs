@@ -1,4 +1,4 @@
-use crate::configuration::*;
+use crate::configuration::ABSOLUTE_STATIC_CONTENT_PATH;
 use crate::util::file::get_file_extension;
 use crate::util::headers::Header;
 use crate::util::license::print_license_info;
@@ -15,35 +15,49 @@ use std::sync::Arc;
 
 use std::{fs::OpenOptions, net::TcpListener};
 
+use super::configuration::Configuration;
 use super::cors::Cors;
 use super::thread::ThreadPool;
 use super::uri::URI;
 
-pub struct Server {
+pub struct Server<'a> {
     unixtime: u64,
-    cors: Cors<'static>,
+    cors: Cors<'a>,
+    config: Configuration<'a>,
 }
 
-impl Server {
-    pub fn new() -> std::io::Result<Self> {
+impl<'a> Server<'a> {
+    pub fn new(config: Configuration<'a>) -> std::io::Result<Self> {
         let unixtime = generate_unixtime().expect("Failed generating system unix time");
+
+        let config_ref = config.clone();
 
         Ok(Self {
             unixtime: unixtime,
-            cors: Cors::new()?,
+            cors: Cors::new(
+                config_ref.allowed_origins,
+                config_ref.allow_all_origins,
+                config_ref.allowed_methods,
+            )?,
+            config: config,
         })
     }
 
-    pub fn start_multithread(self: Arc<Self>) -> std::io::Result<()> {
+    pub fn start_multithread(self: Arc<Self>) -> std::io::Result<()>
+    where
+        Self: 'static,
+    {
         print_license_info();
 
-        let listener = TcpListener::bind(format!("{ADDR}:{PORT}")).unwrap();
+        let listener = TcpListener::bind(
+            [self.config.addr, ":", self.config.port.to_string().as_str()].concat(),
+        )?;
 
-        if !SECURITY_HEADERS {
+        if !self.config.security_headers {
             println!("Production note: security headers are currently turned off, keep it enabled in production!")
         }
 
-        let pool = ThreadPool::new(NUM_OF_THREADS).unwrap();
+        let pool = ThreadPool::new(self.config.num_of_threads).unwrap();
 
         for stream in listener.incoming() {
             let self_ref = Arc::clone(&self);
@@ -53,7 +67,7 @@ impl Server {
                 let response = Self::multithread_handle_connection(&self_ref, &mut stream);
 
                 // The thread currently panics if the response returns an error. TODO: fix the possible error.
-                stream.write(&response.unwrap().as_bytes()).unwrap();
+                stream.write_all(&response.unwrap().as_bytes()).unwrap();
                 stream.flush().unwrap();
             });
         }
@@ -64,29 +78,36 @@ impl Server {
     pub fn start_singlethread(&self) -> Result<(), std::io::Error> {
         print_license_info();
 
-        let listener = TcpListener::bind(format!("{ADDR}:{PORT}")).unwrap();
+        let listener = TcpListener::bind(
+            [self.config.addr, ":", self.config.port.to_string().as_str()].concat(),
+        )?;
 
         /* Create the log file and return error if it fails creating or opening existing one */
-        let mut logfile =
-            if SAVE_LOGS {
-                let result =
-                    Some(OpenOptions::new().append(true).create(true).open(
-                        [ABSOLUTE_LOGS_PATH, "/", self.unixtime.to_string().as_str()].concat(),
-                    ));
-                match result.expect("Something went wrong whilst unwrapping the logfile.") {
-                    Ok(file) => Some(file),
-                    Err(_) => {
-                        println!(
-                            "Warning: Failed creating or opening logfile. Logs will not be saved."
-                        );
-                        None
-                    }
+        let mut logfile = if self.config.save_logs {
+            let result = Some(
+                OpenOptions::new().append(true).create(true).open(
+                    [
+                        self.config.absolute_logs_path,
+                        "/",
+                        self.unixtime.to_string().as_str(),
+                    ]
+                    .concat(),
+                ),
+            );
+            match result.expect("Something went wrong whilst unwrapping the logfile.") {
+                Ok(file) => Some(file),
+                Err(_) => {
+                    println!(
+                        "Warning: Failed creating or opening logfile. Logs will not be saved."
+                    );
+                    None
                 }
-            } else {
-                None
-            };
+            }
+        } else {
+            None
+        };
 
-        if !SECURITY_HEADERS {
+        if !self.config.security_headers {
             println!("Production note: security headers are currently turned off, keep it enabled in production!")
         }
 
@@ -115,7 +136,7 @@ impl Server {
 
         req_headers.insert(
             "Access-Control-Allow-Origin".to_string(),
-            if ALLOW_ALL_ORIGINS {
+            if self.config.allow_all_origins {
                 "*".to_string()
             } else if self.cors.origin_is_allowed(&origin) {
                 origin.to_string()
@@ -172,7 +193,7 @@ TIME: {}
 
         req_headers.insert(
             "Access-Control-Allow-Origin".to_string(),
-            if ALLOW_ALL_ORIGINS {
+            if self.config.allow_all_origins {
                 "*".to_string()
             } else if self.cors.origin_is_allowed(&origin) {
                 origin.to_string()
@@ -205,7 +226,7 @@ TIME: {}
             None => return create_file_response(req_headers, None, None, 400),
         };
 
-        let absolute_path = [ABSOLUTE_STATIC_CONTENT_PATH, "/", uri_path_ref].concat();
+        let absolute_path = [self.config.absolute_static_content_path, "/", uri_path_ref].concat();
 
         let path = Path::new(&absolute_path);
 
@@ -217,10 +238,9 @@ TIME: {}
             return create_dir_response(req_headers, path_iter);
         }
 
-        let requested_content = fs::File::open(format!(
-            "{ABSOLUTE_STATIC_CONTENT_PATH}/{}",
-            uri.get().clone().unwrap()
-        ));
+        let requested_content =
+            fs::File::open([ABSOLUTE_STATIC_CONTENT_PATH, "/", uri_path_ref].concat());
+
         let response = match requested_content {
             Ok(file) => file,
             Err(_err) => return create_file_response(req_headers, None, None, 404),

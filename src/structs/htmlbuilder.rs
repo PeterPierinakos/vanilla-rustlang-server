@@ -36,7 +36,7 @@ impl<'a> HTMLBuilder<'a> {
         doc.push_str("<html>");
         doc.push_str("<head>");
 
-        for item in self.head.iter() {
+        for item in &self.head {
             doc.push_str(item);
         }
 
@@ -44,7 +44,7 @@ impl<'a> HTMLBuilder<'a> {
 
         doc.push_str("<body>");
 
-        for item in self.body.iter() {
+        for item in &self.body {
             doc.push_str(item);
         }
 

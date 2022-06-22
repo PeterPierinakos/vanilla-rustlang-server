@@ -65,8 +65,6 @@ pub fn create_file_response(
     response.body(file_buf.as_str());
     response.status_code(200);
 
-    println!("{}", response.construct());
-
     Ok(response.construct())
 }
 
