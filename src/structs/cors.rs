@@ -14,12 +14,16 @@ pub struct Cors<'a> {
 
 impl Cors<'_> {
     pub fn new() -> std::io::Result<Self> {
-        if ALLOWED_ORIGINS.is_empty() && !ALLOW_ALL_ORIGINS {
-            panic!("ALLOWED_ORIGINS is set to false and no origins are provided");
-        }
-        if ALLOWED_METHODS.is_empty() {
-            panic!("You have to specify 1 or more allowed methods (GET recommended");
-        }
+        // Static assertions! If an invalid value is provided, this will fail to build rather than failing at runtime
+        #[allow(clippy::manual_assert)]
+        const _: () = {
+            if ALLOWED_ORIGINS.is_empty() && !ALLOW_ALL_ORIGINS {
+                panic!("ALLOWED_ORIGINS is set to false and no origins are provided");
+            }
+            if ALLOWED_METHODS.is_empty() {
+                panic!("You have to specify 1 or more allowed methods (GET recommended");
+            }
+        };
 
         let all_methods = HashSet::from([
             "GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH",
@@ -27,7 +31,7 @@ impl Cors<'_> {
 
         Ok(Self {
             allowed_methods: {
-                for method in ALLOWED_METHODS.iter() {
+                for method in &ALLOWED_METHODS {
                     if !all_methods.contains(method) {
                         return Err(Error::new(
                             ErrorKind::Other,
@@ -45,9 +49,9 @@ impl Cors<'_> {
         })
     }
 
-    pub fn method_is_allowed(&self, buf: &String) -> bool {
+    pub fn method_is_allowed(&self, buf: &str) -> bool {
         for method in self.allowed_methods.as_ref().unwrap().iter() {
-            if buf.starts_with(&method.to_string()) {
+            if buf.starts_with(method) {
                 return true;
             }
         }
