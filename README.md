@@ -12,7 +12,7 @@ VRS is a simple, minimal, free and open source static web server written in Rust
 - Singlethreading
 - CORS (methods only, origins soon)
 - Dockerfiles (Debian & Alpine)
-- Customizable HTTP responses (200, 400 & 404)
+- Customizable HTTP responses (200, 400 & 404, 405, ...)
 - Guarantee to compile on all platforms (recommended: Linux or BSD)
 - Easy customizability via its configuration file
 - Security headers out of the box (origin attacks, iframe attacks, clickjacking etc.)
