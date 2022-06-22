@@ -25,12 +25,10 @@ pub fn find_buf_headers(buf: &[u8; 1024]) -> Result<HashMap<String, String>, Err
             curr_header_name = String::new();
             curr_header_value = String::new();
             found_colon = false;
-        } else {
-            if !found_colon {
-                curr_header_name.push(c);
-            } else if found_colon && c != ' ' {
-                curr_header_value.push(c);
-            }
+        } else if !found_colon {
+            curr_header_name.push(c);
+        } else if found_colon && c != ' ' {
+            curr_header_value.push(c);
         }
     }
 
