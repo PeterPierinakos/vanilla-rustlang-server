@@ -13,13 +13,13 @@ pub type ServerResponse<'a> = Result<OkResponse, ErrorResponse>;
 
 pub fn handle_response(response: ServerResponse) -> String {
     match response {
-        Ok((headers, file_ext, file)) => create_response(headers, file_ext, file, 200),
-        Err((headers, status)) => create_response(headers, None, None, status),
+        Ok((headers, file_ext, file)) => create_response(&headers, file_ext, file, 200),
+        Err((headers, status)) => create_response(&headers, None, None, status),
     }
 }
 
 pub fn create_response(
-    req_headers: Header,
+    req_headers: &Header,
     file_ext: Option<String>,
     file: Option<File>,
     status_code: u16,
@@ -73,10 +73,7 @@ pub fn create_response(
 fn find_file(filename: &str) -> File {
     let url = [ABSOLUTE_STATIC_CONTENT_PATH, "/", filename].concat();
 
-    let file =
-        fs::File::open(&url).expect(format!("{filename} file doesn't exist ('{}')", &url).as_str());
-
-    file
+    fs::File::open(&url).unwrap_or_else(|_| panic!("{filename} file doesn't exist ('{}')", url))
 }
 
 fn find_mime_type(file_extension: &str) -> &str {
