@@ -90,7 +90,7 @@ impl<'a> ResponseBuilder<'a> {
             _ => panic!("Invalid status code provided"),
         });
 
-        for (key, val) in self.headers.iter() {
+        for (key, val) in &self.headers {
             response.push_str("\r\n");
             response.push_str(format!("{}:{}", key, val).as_str());
         }

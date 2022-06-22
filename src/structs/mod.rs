@@ -1,3 +1,4 @@
+pub mod configuration;
 pub mod cors;
 pub mod htmlbuilder;
 pub mod responsebuilder;

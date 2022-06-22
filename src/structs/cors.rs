@@ -1,5 +1,3 @@
-use crate::configuration::{ALLOWED_METHODS, ALLOWED_ORIGINS, ALLOW_ALL_ORIGINS};
-
 use std::{
     collections::HashSet,
     io::{Error, ErrorKind},
@@ -12,14 +10,22 @@ pub struct Cors<'a> {
     pub allowed_origins: Option<Vec<&'a str>>,
 }
 
-impl Cors<'_> {
-    pub fn new() -> std::io::Result<Self> {
-        if ALLOWED_ORIGINS.is_empty() && !ALLOW_ALL_ORIGINS {
-            panic!("ALLOWED_ORIGINS is set to false and no origins are provided");
-        }
-        if ALLOWED_METHODS.is_empty() {
-            panic!("You have to specify 1 or more allowed methods (GET recommended");
-        }
+impl<'a> Cors<'a> {
+    pub fn new(
+        allowed_origins: Vec<&'a str>,
+        allow_all_origins: bool,
+        allowed_methods: Vec<&'a str>,
+    ) -> std::io::Result<Self> {
+        /*  Static assertions! If an invalid value is provided, this will fail to build rather than failing at runtime */
+        #[allow(clippy::manual_assert)]
+        let _: () = {
+            if allowed_origins.is_empty() && !allow_all_origins {
+                panic!("ALLOWED_ORIGINS is set to false and no origins are provided");
+            }
+            if allowed_methods.is_empty() {
+                panic!("You have to specify 1 or more allowed methods (GET recommended");
+            }
+        };
 
         let all_methods = HashSet::from([
             "GET", "HEAD", "POST", "PUT", "DELETE", "CONNECT", "OPTIONS", "TRACE", "PATCH",
@@ -27,7 +33,7 @@ impl Cors<'_> {
 
         Ok(Self {
             allowed_methods: {
-                for method in ALLOWED_METHODS.iter() {
+                for method in &allowed_methods {
                     if !all_methods.contains(method) {
                         return Err(Error::new(
                             ErrorKind::Other,
@@ -35,12 +41,12 @@ impl Cors<'_> {
                         ));
                     }
                 }
-                Some(ALLOWED_METHODS.into())
+                Some(allowed_methods)
             },
-            allowed_origins: if ALLOWED_ORIGINS.is_empty() {
+            allowed_origins: if allowed_origins.is_empty() {
                 None
             } else {
-                Some(ALLOWED_ORIGINS.into())
+                Some(allowed_origins)
             },
         })
     }
