@@ -15,7 +15,10 @@ pub fn get_file_extension(filename: &str) -> &str {
 pub fn find_file(filename: &str) -> File {
     let url = [ABSOLUTE_STATIC_CONTENT_PATH, "/", filename].concat();
 
-    fs::File::open(&url).unwrap_or_else(|_| panic!("{filename} file doesn't exist ('{}')", url))
+    let file =
+        fs::File::open(&url).expect(format!("{filename} file doesn't exist ('{}')", &url).as_str());
+
+    file
 }
 
 pub fn find_mime_type(file_extension: &str) -> &str {

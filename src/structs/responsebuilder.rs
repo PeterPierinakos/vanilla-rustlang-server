@@ -90,7 +90,7 @@ impl<'a> ResponseBuilder<'a> {
             _ => panic!("Invalid status code provided"),
         });
 
-        for (key, val) in &self.headers {
+        for (key, val) in self.headers.iter() {
             response.push_str("\r\n");
             response.push_str(format!("{}:{}", key, val).as_str());
         }
@@ -99,11 +99,5 @@ impl<'a> ResponseBuilder<'a> {
         response.push_str(self.body.unwrap());
 
         response
-    }
-}
-
-impl<'a> Default for ResponseBuilder<'a> {
-    fn default() -> Self {
-        Self::new()
     }
 }

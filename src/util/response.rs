@@ -1,11 +1,12 @@
 use super::file::*;
 use super::headers::Header;
 use super::status::StatusCode;
+use crate::configuration::*;
 use crate::structs::htmlbuilder::HTMLBuilder;
 use crate::structs::responsebuilder::ResponseBuilder;
 use std::fs::{self, File};
 use std::io::{Error, ErrorKind, Read};
-
+use std::path::Iter;
 pub type ErrorResponse = (Header, StatusCode);
 pub type OkResponse = (Header, Option<String>, Option<File>);
 
@@ -13,7 +14,7 @@ pub type OkResponse = (Header, Option<String>, Option<File>);
 pub type ServerResponse<'a> = Result<OkResponse, ErrorResponse>;
 
 pub fn create_file_response(
-    req_headers: &Header,
+    req_headers: Header,
     file_ext: Option<String>,
     file: Option<File>,
     status_code: u16,
@@ -31,7 +32,7 @@ pub fn create_file_response(
 
     let mut file_buf = String::new();
 
-    if let Err(_) = file.read_to_string(&mut file_buf) {
+    if let Err(x) = file.read_to_string(&mut file_buf) {
         return Err(Error::new(
             ErrorKind::InvalidData,
             "File is not valid UTF-8 data.",
@@ -110,6 +111,8 @@ pub fn create_dir_response(
     }
 
     for dir in &dirs {
+        let dir_str = dir.to_str().unwrap();
+
         html.add_to_body("<li>");
         html.add_to_body(dir.to_str().unwrap());
         html.add_to_body("</li>")
