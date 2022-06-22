@@ -13,7 +13,7 @@ impl URI {
         }
     }
 
-    pub fn find(&mut self, headers_buffer: &String) {
+    pub fn find(&mut self, headers_buffer: &str) {
         let mut uri = String::new();
 
         for (i, c) in headers_buffer.chars().enumerate() {
@@ -52,8 +52,7 @@ impl URI {
 
         for component in components {
             match component {
-                Component::Prefix(_) => return false, // Should be unreachable
-                Component::RootDir => return false,   // Should be unreachable
+                Component::RootDir | Component::Prefix(_) => return false, // Should be unreachable
                 Component::CurDir => {
                     if result.as_os_str().is_empty() {
                         // If you've already stripped the leading / from the requested path, this should no-op
@@ -69,5 +68,11 @@ impl URI {
             };
         }
         true
+    }
+}
+
+impl Default for URI {
+    fn default() -> Self {
+        Self::new()
     }
 }
