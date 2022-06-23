@@ -9,8 +9,8 @@ RUN rm -rf {production,setup.sh}
 RUN mkdir -p /var/www/static/ && mkdir /var/www/logs/
 RUN cp ./media/* /var/www/static/
 RUN rm -rf ./media/
-RUN cargo build --release
+RUN make build
 
-CMD ["cargo", "run", "--release"]
+CMD ["make", "run"]
 
 EXPOSE 80/tcp
