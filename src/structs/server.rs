@@ -1,6 +1,5 @@
 use crate::configuration::ABSOLUTE_STATIC_CONTENT_PATH;
 use crate::util::file::get_file_extension;
-use crate::util::headers::Header;
 use crate::util::license::print_license_info;
 use crate::util::response::{create_dir_response, create_file_response};
 use crate::util::socket::{parse_utf8, read_stream};
@@ -64,7 +63,7 @@ impl<'a> Server<'a> {
 
             pool.execute(move || {
                 let mut stream = stream.unwrap();
-                let response = Self::multithread_handle_connection(&self_ref, &mut stream);
+                let response = Self::serve_request(&self_ref, &mut None, &mut stream);
 
                 // The thread currently panics if the response returns an error. TODO: fix the possible error.
                 stream.write_all(&response.unwrap().as_bytes()).unwrap();
@@ -108,13 +107,13 @@ impl<'a> Server<'a> {
         };
 
         if !self.config.security_headers {
-            println!("Production note: security headers are currently turned off, keep it enabled in production!")
+            println!("Production note: security headers are currently turned off, keep it enabled in production!");
         }
 
         for stream in listener.incoming() {
             let mut stream = stream.unwrap();
 
-            let response = self.singlethread_handle_connection(&mut logfile, &mut stream)?;
+            let response = self.serve_request(&mut logfile, &mut stream)?;
 
             stream.write(&response.as_bytes()).unwrap();
             stream.flush().unwrap();
@@ -123,37 +122,7 @@ impl<'a> Server<'a> {
         Ok(())
     }
 
-    fn multithread_handle_connection(&self, stream: &mut TcpStream) -> std::io::Result<String> {
-        let (mut req_headers, buf) = match read_stream(stream) {
-            Ok((headers, buf)) => (headers, buf),
-            Err((headers, status)) => return create_file_response(headers, None, None, status),
-        };
-
-        let origin = match req_headers.get("Origin") {
-            Some(header) => header.to_string(),
-            None => "null".to_string(),
-        };
-
-        req_headers.insert(
-            "Access-Control-Allow-Origin".to_string(),
-            if self.config.allow_all_origins {
-                "*".to_string()
-            } else if self.cors.origin_is_allowed(&origin) {
-                origin.to_string()
-            } else {
-                "null".to_string()
-            },
-        );
-
-        let buf_utf8 = match parse_utf8(&req_headers, &buf) {
-            Ok(utf8) => utf8,
-            Err((headers, status)) => create_file_response(headers, None, None, status)?,
-        };
-
-        self.main_logic(req_headers, buf_utf8)
-    }
-
-    fn singlethread_handle_connection(
+    fn serve_request(
         &self,
         logfile: &mut Option<File>,
         stream: &mut TcpStream,
@@ -175,10 +144,8 @@ impl<'a> Server<'a> {
                         "
 -- NEW REQUEST --
 HEADERS: {:?}
-TIME: {}
                     ",
                         req_headers,
-                        generate_unixtime().unwrap()
                     )
                     .as_bytes(),
                 ) {
@@ -207,10 +174,6 @@ TIME: {}
             Err((headers, status)) => create_file_response(headers, None, None, status)?,
         };
 
-        self.main_logic(req_headers, buf_utf8)
-    }
-
-    fn main_logic(&self, req_headers: Header, buf_utf8: String) -> std::io::Result<String> {
         if !self.cors.method_is_allowed(&buf_utf8) {
             return create_file_response(req_headers, None, None, 405);
         }
