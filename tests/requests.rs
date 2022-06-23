@@ -1,8 +1,5 @@
 #[cfg(test)]
 mod tests {
-    use std::io::prelude::*;
-    use std::net::TcpStream;
-
     use vrs::configuration::*;
     use vrs::enums::status::TestStatusCode;
     use vrs::structs::configuration::Configuration;

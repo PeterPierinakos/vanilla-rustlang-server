@@ -224,19 +224,15 @@ HEADERS: {:?}
 }
 
 pub struct TestServer<'a> {
-    unixtime: u64,
     cors: Cors<'a>,
     config: Configuration<'a>,
 }
 
 impl<'a> TestServer<'a> {
     pub fn new(config: Configuration<'a>) -> std::io::Result<Self> {
-        let unixtime = generate_unixtime().expect("Failed generating system unix time");
-
         let config_ref = config.clone();
 
         Ok(Self {
-            unixtime: unixtime,
             cors: Cors::new(
                 config_ref.allowed_origins,
                 config_ref.allow_all_origins,
@@ -345,10 +341,6 @@ HEADERS: {:?}
         let path = Path::new(&absolute_path);
 
         if path.is_dir() {
-            let path_iter = match path.read_dir() {
-                Ok(iter) => iter,
-                Err(_) => return TestStatusCode::InternalServerError,
-            };
             return TestStatusCode::DirResponse;
         }
 
