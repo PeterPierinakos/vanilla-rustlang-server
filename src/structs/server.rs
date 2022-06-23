@@ -1,10 +1,13 @@
 use crate::configuration::ABSOLUTE_STATIC_CONTENT_PATH;
+use crate::enums::status::TestStatusCode;
 use crate::util::file::get_file_extension;
+use crate::util::headers::find_buf_headers;
 use crate::util::license::print_license_info;
 use crate::util::response::{create_dir_response, create_file_response};
 use crate::util::socket::{parse_utf8, read_stream};
 use crate::util::time::generate_unixtime;
 
+use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::Write;
 
@@ -129,8 +132,10 @@ impl<'a> Server<'a> {
     ) -> std::io::Result<String> {
         let (mut req_headers, buf) = match read_stream(stream) {
             Ok((headers, buf)) => (headers, buf),
-            Err((headers, status)) => return create_file_response(headers, None, None, status),
+            Err(status) => return create_file_response(HashMap::new(), None, None, status),
         };
+
+        println!("{:?}", buf);
 
         let origin = match req_headers.get("Origin") {
             Some(header) => header.to_string(),
@@ -215,5 +220,146 @@ HEADERS: {:?}
             Some(response),
             200,
         )
+    }
+}
+
+pub struct TestServer<'a> {
+    unixtime: u64,
+    cors: Cors<'a>,
+    config: Configuration<'a>,
+}
+
+impl<'a> TestServer<'a> {
+    pub fn new(config: Configuration<'a>) -> std::io::Result<Self> {
+        let unixtime = generate_unixtime().expect("Failed generating system unix time");
+
+        let config_ref = config.clone();
+
+        Ok(Self {
+            unixtime: unixtime,
+            cors: Cors::new(
+                config_ref.allowed_origins,
+                config_ref.allow_all_origins,
+                config_ref.allowed_methods,
+            )?,
+            config: config,
+        })
+    }
+
+    /// Create a fake [u8; 1024] request buffer for testing the server's core, with the arguments being stringly typed.
+    /// info: the main part of the HTTP request (e.g. "GET / HTTP/1.1")
+    /// headers: the headers of the HTTP requests (e.g. "Origin:localhost")
+    pub fn create_fake_buffer(info: &str, headers: Vec<&str>) -> [u8; 1024] {
+        let mut fake_buf_utf8 = String::new();
+
+        fake_buf_utf8.push_str(info);
+        fake_buf_utf8.push('\n');
+
+        for header in headers {
+            fake_buf_utf8.push_str(header);
+            fake_buf_utf8.push('\n');
+        }
+
+        let mut fake_buf: [u8; 1024] = [0; 1024];
+
+        for (i, c) in fake_buf_utf8.as_bytes().iter().enumerate() {
+            fake_buf[i] = *c;
+        }
+
+        fake_buf
+    }
+
+    pub fn serve_fake_request(
+        &self,
+        logfile: &mut Option<File>,
+        buf: &[u8; 1024],
+    ) -> TestStatusCode {
+        let mut req_headers = match find_buf_headers(buf) {
+            Ok(headers) => headers,
+            Err(_) => return TestStatusCode::BadRequest,
+        };
+
+        let buf_utf8 = match parse_utf8(&req_headers, &buf) {
+            Ok(utf8) => utf8,
+            Err((headers, status)) => create_file_response(headers, None, None, status).unwrap(),
+        };
+
+        let origin = match req_headers.get("Origin") {
+            Some(header) => header.to_string(),
+            None => "null".to_string(),
+        };
+
+        match logfile {
+            Some(file) => {
+                match file.write_all(
+                    format!(
+                        "
+-- NEW REQUEST --
+HEADERS: {:?}
+                    ",
+                        req_headers,
+                    )
+                    .as_bytes(),
+                ) {
+                    Ok(()) => {}
+                    Err(_) => {
+                        println!("Warning: something went wrong whilst writing to the logfile. Maybe it's too large?");
+                    }
+                }
+            }
+            None => {}
+        }
+
+        req_headers.insert(
+            "Access-Control-Allow-Origin".to_string(),
+            if self.config.allow_all_origins {
+                "*".to_string()
+            } else if self.cors.origin_is_allowed(&origin) {
+                origin.to_string()
+            } else {
+                "null".to_string()
+            },
+        );
+
+        if req_headers.get("Access-Control-Allow-Origin").unwrap() == "null" {
+            return TestStatusCode::CORSError;
+        }
+
+        if !self.cors.method_is_allowed(&buf_utf8) {
+            return TestStatusCode::MethodNotAllowed;
+        }
+
+        let mut uri = URI::new();
+
+        uri.find(&buf_utf8);
+
+        let uri_path_ref = uri.get().as_ref();
+
+        let uri_path_ref = match uri_path_ref {
+            Some(path) => path,
+            None => return TestStatusCode::BadRequest,
+        };
+
+        let absolute_path = [self.config.absolute_static_content_path, "/", uri_path_ref].concat();
+
+        let path = Path::new(&absolute_path);
+
+        if path.is_dir() {
+            let path_iter = match path.read_dir() {
+                Ok(iter) => iter,
+                Err(_) => return TestStatusCode::InternalServerError,
+            };
+            return TestStatusCode::DirResponse;
+        }
+
+        let requested_content =
+            fs::File::open([ABSOLUTE_STATIC_CONTENT_PATH, "/", uri_path_ref].concat());
+
+        match requested_content {
+            Ok(_) => (),
+            Err(_err) => return TestStatusCode::NotFound,
+        };
+
+        TestStatusCode::OK
     }
 }
