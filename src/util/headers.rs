@@ -1,11 +1,10 @@
+use super::status::StatusCode;
 use std::collections::HashMap;
 use std::str;
 
-use super::response::ErrorResponse;
-
 pub type Header = HashMap<String, String>;
 
-pub fn find_buf_headers(buf: &[u8; 1024]) -> Result<HashMap<String, String>, ErrorResponse> {
+pub fn find_buf_headers(buf: &[u8; 1024]) -> Result<HashMap<String, String>, StatusCode> {
     let buffer_c = str::from_utf8(buf).unwrap();
 
     let mut headers: HashMap<String, String> = HashMap::new();
@@ -35,7 +34,7 @@ pub fn find_buf_headers(buf: &[u8; 1024]) -> Result<HashMap<String, String>, Err
     }
 
     if headers.is_empty() {
-        return Err((headers, 400));
+        return Err(400);
     }
 
     Ok(headers)

@@ -5,4 +5,4 @@ build:
 install:
 	cargo install --path .
 run:
-	cargo run --release
+	cargo test && cargo run --release
