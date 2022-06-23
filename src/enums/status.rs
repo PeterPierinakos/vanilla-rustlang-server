@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum TestStatusCode {
     DirResponse,
     OK,
