@@ -14,7 +14,7 @@ mod tests {
             port: PORT,
             allow_all_origins: false,
             allow_iframes: false,
-            allowed_methods: ALLOWED_METHODS.to_vec(),
+            allowed_methods: vec!["GET"],
             allowed_origins: vec!["localhost"],
             save_logs: false,
             multithreading: false,
@@ -59,9 +59,15 @@ mod tests {
         /* Should return CORSError because origin is not allowed */
         let test_5 = test_server.serve_fake_request(
             &mut None,
+            &TestServer::create_fake_buffer("GET / HTTP/1.1", vec!["User-Agent:rust"]),
+        );
+
+        /* Should return MethodNotAllowed because we have only specified "GET" as allowed */
+        let test_6 = test_server.serve_fake_request(
+            &mut None,
             &TestServer::create_fake_buffer(
-                "GET /../../../etc/passwd HTTP/1.1",
-                vec!["User-Agent:rust"],
+                "POST / HTTP/1.1",
+                vec!["User-Agent:rust", "Origin:localhost"],
             ),
         );
 
@@ -70,6 +76,7 @@ mod tests {
         assert!(matches!(test_3, TestStatusCode::NotFound));
         assert!(matches!(test_4, TestStatusCode::BadRequest));
         assert!(matches!(test_5, TestStatusCode::CORSError));
+        assert!(matches!(test_6, TestStatusCode::MethodNotAllowed));
 
         Ok(())
     }
