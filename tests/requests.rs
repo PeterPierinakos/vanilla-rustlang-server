@@ -71,12 +71,12 @@ mod tests {
             ),
         );
 
-        assert!(matches!(test_1, TestStatusCode::OK));
-        assert!(matches!(test_2, TestStatusCode::BadRequest));
-        assert!(matches!(test_3, TestStatusCode::NotFound));
-        assert!(matches!(test_4, TestStatusCode::BadRequest));
-        assert!(matches!(test_5, TestStatusCode::CORSError));
-        assert!(matches!(test_6, TestStatusCode::MethodNotAllowed));
+        assert_eq!(test_1, TestStatusCode::OK);
+        assert_eq!(test_2, TestStatusCode::BadRequest);
+        assert_eq!(test_3, TestStatusCode::NotFound);
+        assert_eq!(test_4, TestStatusCode::BadRequest);
+        assert_eq!(test_5, TestStatusCode::CORSError);
+        assert_eq!(test_6, TestStatusCode::MethodNotAllowed);
 
         Ok(())
     }
