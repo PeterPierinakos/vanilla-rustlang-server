@@ -63,7 +63,7 @@ pub fn create_file_response(
 
     response.detect_protocol();
     response.body(file_buf.as_str());
-    response.status_code(200);
+    response.status_code(status_code);
 
     Ok(response.construct())
 }
