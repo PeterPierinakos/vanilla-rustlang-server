@@ -118,7 +118,7 @@ impl<'a> Server<'a> {
 
             let response = self.serve_request(&mut logfile, &mut stream)?;
 
-            stream.write(&response.as_bytes()).unwrap();
+            stream.write_all(&response.as_bytes()).unwrap();
             stream.flush().unwrap();
         }
 
@@ -353,5 +353,104 @@ HEADERS: {:?}
         };
 
         TestStatusCode::OK
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::configuration::*;
+    use crate::enums::status::TestStatusCode;
+    use crate::structs::configuration::Configuration;
+    use crate::structs::server::TestServer;
+
+    fn create_test_server() -> TestServer<'static> {
+        TestServer::new(Configuration {
+            absolute_logs_path: ABSOLUTE_LOGS_PATH,
+            absolute_static_content_path: ABSOLUTE_STATIC_CONTENT_PATH,
+            addr: ADDR,
+            port: PORT,
+            allow_all_origins: false,
+            allow_iframes: false,
+            allowed_methods: vec!["GET"],
+            allowed_origins: vec!["localhost"],
+            save_logs: false,
+            multithreading: false,
+            num_of_threads: NUM_OF_THREADS,
+            http_protocol_version: HTTP_PROTOCOL_VERSION,
+            security_headers: false,
+        })
+        .expect("test server creation failed")
+    }
+
+    #[test]
+    fn get_index_is_ok() {
+        let test_server = create_test_server();
+        let req = test_server.serve_fake_request(
+            &mut None,
+            &TestServer::create_fake_buffer(
+                "GET / HTTP/1.1",
+                vec!["User-Agent:rust", "Origin:localhost"],
+            ),
+        );
+        assert_eq!(req, TestStatusCode::OK);
+    }
+
+    #[test]
+    fn no_headers_is_bad_request() {
+        let test_server = create_test_server();
+        let req = test_server.serve_fake_request(
+            &mut None,
+            &TestServer::create_fake_buffer("GET / HTTP/1.1", vec![]),
+        );
+        assert_eq!(req, TestStatusCode::BadRequest);
+    }
+
+    #[test]
+    fn nonexistent_file_is_not_found() {
+        let test_server = create_test_server();
+        let req = test_server.serve_fake_request(
+            &mut None,
+            &TestServer::create_fake_buffer(
+                "GET /notfound HTTP/1.1",
+                vec!["User-Agent:rust", "Origin:localhost"],
+            ),
+        );
+        assert_eq!(req, TestStatusCode::NotFound);
+    }
+
+    #[test]
+    fn path_traversal_is_bad_request() {
+        let test_server = create_test_server();
+        let req = test_server.serve_fake_request(
+            &mut None,
+            &TestServer::create_fake_buffer(
+                "GET /../../../etc/passwd HTTP/1.1",
+                vec!["User-Agent:rust", "Origin:localhost"],
+            ),
+        );
+        assert_eq!(req, TestStatusCode::BadRequest);
+    }
+
+    #[test]
+    fn forbidden_origin_is_cors_error() {
+        let test_server = create_test_server();
+        let req = test_server.serve_fake_request(
+            &mut None,
+            &TestServer::create_fake_buffer("GET / HTTP/1.1", vec!["User-Agent:rust"]),
+        );
+        assert_eq!(req, TestStatusCode::CORSError);
+    }
+
+    #[test]
+    fn forbidden_method_is_not_allowed() {
+        let test_server = create_test_server();
+        let req = test_server.serve_fake_request(
+            &mut None,
+            &TestServer::create_fake_buffer(
+                "POST / HTTP/1.1",
+                vec!["User-Agent:rust", "Origin:localhost"],
+            ),
+        );
+        assert_eq!(req, TestStatusCode::MethodNotAllowed);
     }
 }
