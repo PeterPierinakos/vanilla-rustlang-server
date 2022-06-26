@@ -1,7 +1,4 @@
-use crate::configuration::ABSOLUTE_STATIC_CONTENT_PATH;
-use crate::enums::status::TestStatusCode;
 use crate::util::file::get_file_extension;
-use crate::util::headers::find_buf_headers;
 use crate::util::license::print_license_info;
 use crate::util::response::{create_dir_response, create_file_response};
 use crate::util::socket::{parse_utf8, read_stream};
@@ -9,9 +6,8 @@ use crate::util::time::generate_unixtime;
 
 use std::collections::HashMap;
 use std::fs::{self, File};
-use std::io::Write;
+use std::io::{Read, Write};
 
-use std::net::TcpStream;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -116,7 +112,7 @@ impl<'a> Server<'a> {
         for stream in listener.incoming() {
             let mut stream = stream.unwrap();
 
-            let response = self.serve_request(&mut logfile, &mut stream)?;
+            let response = self.serve_request(&mut logfile, &stream)?;
 
             stream.write_all(&response.as_bytes()).unwrap();
             stream.flush().unwrap();
@@ -128,14 +124,12 @@ impl<'a> Server<'a> {
     fn serve_request(
         &self,
         logfile: &mut Option<File>,
-        stream: &mut TcpStream,
+        input: impl Read,
     ) -> std::io::Result<String> {
-        let (mut req_headers, buf) = match read_stream(stream) {
+        let (mut req_headers, buf) = match read_stream(input) {
             Ok((headers, buf)) => (headers, buf),
             Err(status) => return create_file_response(HashMap::new(), None, None, status),
         };
-
-        println!("{:?}", buf);
 
         let origin = match req_headers.get("Origin") {
             Some(header) => header.to_string(),
@@ -207,7 +201,7 @@ HEADERS: {:?}
         }
 
         let requested_content =
-            fs::File::open([ABSOLUTE_STATIC_CONTENT_PATH, "/", uri_path_ref].concat());
+            fs::File::open([self.config.absolute_static_content_path, "/", uri_path_ref].concat());
 
         let response = match requested_content {
             Ok(file) => file,
@@ -223,234 +217,194 @@ HEADERS: {:?}
     }
 }
 
-pub struct TestServer<'a> {
-    cors: Cors<'a>,
-    config: Configuration<'a>,
-}
-
-impl<'a> TestServer<'a> {
-    pub fn new(config: Configuration<'a>) -> std::io::Result<Self> {
-        let config_ref = config.clone();
-
-        Ok(Self {
-            cors: Cors::new(
-                config_ref.allowed_origins,
-                config_ref.allow_all_origins,
-                config_ref.allowed_methods,
-            )?,
-            config: config,
-        })
-    }
-
-    /// Create a fake [u8; 1024] request buffer for testing the server's core, with the arguments being stringly typed.
-    /// info: the main part of the HTTP request (e.g. "GET / HTTP/1.1")
-    /// headers: the headers of the HTTP requests (e.g. "Origin:localhost")
-    pub fn create_fake_buffer(info: &str, headers: Vec<&str>) -> [u8; 1024] {
-        let mut fake_buf_utf8 = String::new();
-
-        fake_buf_utf8.push_str(info);
-        fake_buf_utf8.push('\n');
-
-        for header in headers {
-            fake_buf_utf8.push_str(header);
-            fake_buf_utf8.push('\n');
-        }
-
-        let mut fake_buf: [u8; 1024] = [0; 1024];
-
-        for (i, c) in fake_buf_utf8.as_bytes().iter().enumerate() {
-            fake_buf[i] = *c;
-        }
-
-        fake_buf
-    }
-
-    pub fn serve_fake_request(
-        &self,
-        logfile: &mut Option<File>,
-        buf: &[u8; 1024],
-    ) -> TestStatusCode {
-        let mut req_headers = match find_buf_headers(buf) {
-            Ok(headers) => headers,
-            Err(_) => return TestStatusCode::BadRequest,
-        };
-
-        let buf_utf8 = match parse_utf8(&req_headers, &buf) {
-            Ok(utf8) => utf8,
-            Err((headers, status)) => create_file_response(headers, None, None, status).unwrap(),
-        };
-
-        let origin = match req_headers.get("Origin") {
-            Some(header) => header.to_string(),
-            None => "null".to_string(),
-        };
-
-        match logfile {
-            Some(file) => {
-                match file.write_all(
-                    format!(
-                        "
--- NEW REQUEST --
-HEADERS: {:?}
-                    ",
-                        req_headers,
-                    )
-                    .as_bytes(),
-                ) {
-                    Ok(()) => {}
-                    Err(_) => {
-                        println!("Warning: something went wrong whilst writing to the logfile. Maybe it's too large?");
-                    }
-                }
-            }
-            None => {}
-        }
-
-        req_headers.insert(
-            "Access-Control-Allow-Origin".to_string(),
-            if self.config.allow_all_origins {
-                "*".to_string()
-            } else if self.cors.origin_is_allowed(&origin) {
-                origin.to_string()
-            } else {
-                "null".to_string()
-            },
-        );
-
-        if req_headers.get("Access-Control-Allow-Origin").unwrap() == "null" {
-            return TestStatusCode::CORSError;
-        }
-
-        if !self.cors.method_is_allowed(&buf_utf8) {
-            return TestStatusCode::MethodNotAllowed;
-        }
-
-        let mut uri = URI::new();
-
-        uri.find(&buf_utf8);
-
-        let uri_path_ref = uri.get().as_ref();
-
-        let uri_path_ref = match uri_path_ref {
-            Some(path) => path,
-            None => return TestStatusCode::BadRequest,
-        };
-
-        let absolute_path = [self.config.absolute_static_content_path, "/", uri_path_ref].concat();
-
-        let path = Path::new(&absolute_path);
-
-        if path.is_dir() {
-            return TestStatusCode::DirResponse;
-        }
-
-        let requested_content =
-            fs::File::open([ABSOLUTE_STATIC_CONTENT_PATH, "/", uri_path_ref].concat());
-
-        match requested_content {
-            Ok(_) => (),
-            Err(_err) => return TestStatusCode::NotFound,
-        };
-
-        TestStatusCode::OK
-    }
+/// This function only compiles when fuzzing, and exposes the server without actually opening and connecting to a port.
+#[cfg(fuzzing)]
+pub fn fuzz_serve_request(body: &[u8]) {
+    let logs_path = std::env::temp_dir()
+        .canonicalize()
+        .unwrap()
+        .to_string_lossy()
+        .into_owned();
+    let configuration = Configuration {
+        absolute_logs_path: &logs_path,
+        absolute_static_content_path: concat!(env!("CARGO_MANIFEST_DIR"), "/", "tests/static"),
+        addr: "localhost",
+        // Setting the port to 0 takes advantage of an OS behavior that
+        // always uses a free port when assigned in this manner on all
+        // major platforms.
+        port: 0,
+        allow_all_origins: false,
+        allow_iframes: false,
+        allowed_methods: vec!["GET"],
+        allowed_origins: vec!["localhost"],
+        save_logs: false,
+        multithreading: false,
+        num_of_threads: 1,
+        http_protocol_version: crate::enums::http::HttpProtocolVersion::OneDotOne,
+        security_headers: false,
+    };
+    let server = Server::new(configuration).expect("server setup failed");
+    server
+        .serve_request(&mut None, body)
+        .expect("request failed");
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::configuration::*;
-    use crate::enums::status::TestStatusCode;
+    use crate::enums::http::HttpProtocolVersion;
     use crate::structs::configuration::Configuration;
-    use crate::structs::server::TestServer;
+    use crate::structs::server::Server;
+    use std::io::Cursor;
 
-    fn create_test_server() -> TestServer<'static> {
-        TestServer::new(Configuration {
-            absolute_logs_path: ABSOLUTE_LOGS_PATH,
-            absolute_static_content_path: ABSOLUTE_STATIC_CONTENT_PATH,
-            addr: ADDR,
-            port: PORT,
+    // This is thread local to make it possible to get around the lack of a suitable once_cell in std.
+    // Note that this will leak memory in each thread that references it, and is therefore not well-suited for many tasks.
+    // In the future, this should be replaced with a OnceCell, or the Configuration struct should use Cow instead of &str.
+    thread_local! {
+        static LOGS_PATH: &'static str = Box::leak(
+            std::env::temp_dir()
+                .to_str()
+                .expect("Temp dir path should be valid UTF-8")
+                .to_string()
+                .into_boxed_str(),
+        );
+    }
+
+    fn create_test_server() -> Server<'static> {
+        let logs_path = LOGS_PATH.with(|logs_path| *logs_path);
+        Server::new(Configuration {
+            absolute_logs_path: logs_path,
+            absolute_static_content_path: concat!(env!("CARGO_MANIFEST_DIR"), "/", "tests/static"),
+            addr: "localhost",
+            // Setting the port to 0 takes advantage of an OS behavior that
+            // always uses a free port when assigned in this manner on all
+            // major platforms.
+            port: 0,
             allow_all_origins: false,
             allow_iframes: false,
             allowed_methods: vec!["GET"],
             allowed_origins: vec!["localhost"],
             save_logs: false,
             multithreading: false,
-            num_of_threads: NUM_OF_THREADS,
-            http_protocol_version: HTTP_PROTOCOL_VERSION,
+            num_of_threads: 1,
+            http_protocol_version: HttpProtocolVersion::OneDotOne,
             security_headers: false,
         })
         .expect("test server creation failed")
     }
 
+    /// Create a request buffer for testing the server's core, with the arguments being stringly typed.
+    /// info: the main part of the HTTP request (e.g. "GET / HTTP/1.1")
+    /// headers: the headers of the HTTP requests (e.g. "Origin:localhost")
+    fn create_test_buffer(info: &str, headers: Vec<&str>) -> Cursor<Vec<u8>> {
+        let mut buf_utf8 = String::new();
+
+        buf_utf8.push_str(info);
+        buf_utf8.push('\n');
+
+        for header in headers {
+            buf_utf8.push_str(header);
+            buf_utf8.push('\n');
+        }
+
+        Cursor::new(buf_utf8.into_bytes())
+    }
+
+    /// Given an response HTTP response, returns the status code.
+    ///
+    /// This function is simple and will panic on malformed HTTP.
+    fn get_response_code(body: &str) -> u16 {
+        let first_line = body.lines().next().expect("response body is empty");
+        let response_code = first_line
+            .split(' ')
+            .nth(1)
+            .expect("response body's first line is too short");
+        response_code.parse().unwrap()
+    }
+
     #[test]
     fn get_index_is_ok() {
         let test_server = create_test_server();
-        let req = test_server.serve_fake_request(
-            &mut None,
-            &TestServer::create_fake_buffer(
-                "GET / HTTP/1.1",
-                vec!["User-Agent:rust", "Origin:localhost"],
-            ),
-        );
-        assert_eq!(req, TestStatusCode::OK);
+        let req = test_server
+            .serve_request(
+                &mut None,
+                create_test_buffer(
+                    "GET / HTTP/1.1",
+                    vec!["User-Agent:rust", "Origin:localhost"],
+                ),
+            )
+            .unwrap();
+        assert_eq!(get_response_code(&req), 200);
     }
 
     #[test]
     fn no_headers_is_bad_request() {
         let test_server = create_test_server();
-        let req = test_server.serve_fake_request(
-            &mut None,
-            &TestServer::create_fake_buffer("GET / HTTP/1.1", vec![]),
-        );
-        assert_eq!(req, TestStatusCode::BadRequest);
+        let req = test_server
+            .serve_request(&mut None, create_test_buffer("GET / HTTP/1.1", vec![]))
+            .unwrap();
+        assert_eq!(get_response_code(&req), 400);
     }
 
     #[test]
     fn nonexistent_file_is_not_found() {
         let test_server = create_test_server();
-        let req = test_server.serve_fake_request(
-            &mut None,
-            &TestServer::create_fake_buffer(
-                "GET /notfound HTTP/1.1",
-                vec!["User-Agent:rust", "Origin:localhost"],
-            ),
-        );
-        assert_eq!(req, TestStatusCode::NotFound);
+        let req = test_server
+            .serve_request(
+                &mut None,
+                create_test_buffer(
+                    "GET /notfound HTTP/1.1",
+                    vec!["User-Agent:rust", "Origin:localhost"],
+                ),
+            )
+            .unwrap();
+        assert_eq!(get_response_code(&req), 404);
     }
 
     #[test]
     fn path_traversal_is_bad_request() {
         let test_server = create_test_server();
-        let req = test_server.serve_fake_request(
-            &mut None,
-            &TestServer::create_fake_buffer(
-                "GET /../../../etc/passwd HTTP/1.1",
-                vec!["User-Agent:rust", "Origin:localhost"],
-            ),
-        );
-        assert_eq!(req, TestStatusCode::BadRequest);
-    }
-
-    #[test]
-    fn forbidden_origin_is_cors_error() {
-        let test_server = create_test_server();
-        let req = test_server.serve_fake_request(
-            &mut None,
-            &TestServer::create_fake_buffer("GET / HTTP/1.1", vec!["User-Agent:rust"]),
-        );
-        assert_eq!(req, TestStatusCode::CORSError);
+        let req = test_server
+            .serve_request(
+                &mut None,
+                create_test_buffer(
+                    "GET /../../../etc/passwd HTTP/1.1",
+                    vec!["User-Agent:rust", "Origin:localhost"],
+                ),
+            )
+            .unwrap();
+        assert_eq!(get_response_code(&req), 400);
     }
 
     #[test]
     fn forbidden_method_is_not_allowed() {
         let test_server = create_test_server();
-        let req = test_server.serve_fake_request(
-            &mut None,
-            &TestServer::create_fake_buffer(
-                "POST / HTTP/1.1",
-                vec!["User-Agent:rust", "Origin:localhost"],
-            ),
-        );
-        assert_eq!(req, TestStatusCode::MethodNotAllowed);
+        let req = test_server
+            .serve_request(
+                &mut None,
+                create_test_buffer(
+                    "POST / HTTP/1.1",
+                    vec!["User-Agent:rust", "Origin:localhost"],
+                ),
+            )
+            .unwrap();
+        assert_eq!(get_response_code(&req), 405);
+    }
+
+    #[test]
+    fn no_crash_on_empty_body() {
+        let test_server = create_test_server();
+        let res = test_server
+            .serve_request(&mut None, Cursor::new([]))
+            .unwrap();
+        assert_eq!(get_response_code(&res), 400);
+    }
+
+    #[test]
+    fn no_crash_on_bad_unicode() {
+        let test_server = create_test_server();
+        let res = test_server
+            .serve_request(&mut None, Cursor::new([0xc6]))
+            .unwrap();
+        assert_eq!(get_response_code(&res), 400);
     }
 }

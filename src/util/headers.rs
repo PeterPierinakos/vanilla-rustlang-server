@@ -4,8 +4,11 @@ use std::str;
 
 pub type Header = HashMap<String, String>;
 
-pub fn find_buf_headers(buf: &[u8; 1024]) -> Result<HashMap<String, String>, StatusCode> {
-    let buffer_c = str::from_utf8(buf).unwrap();
+pub fn find_buf_headers(buf: &[u8]) -> Result<HashMap<String, String>, StatusCode> {
+    let buffer_c = match str::from_utf8(buf) {
+        Ok(buffer_c) => buffer_c,
+        Err(_) => return Err(400),
+    };
 
     let mut headers: HashMap<String, String> = HashMap::new();
 
