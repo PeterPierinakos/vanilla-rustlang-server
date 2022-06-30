@@ -1,8 +1,8 @@
 clean:
 	cargo clean
 build:
-	cargo build --release
+	cargo test && cargo build --release
 install:
 	cargo install --path .
 run:
-	cargo test && cargo run --release
+	cargo run --release
