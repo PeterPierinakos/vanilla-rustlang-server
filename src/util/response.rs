@@ -1,10 +1,11 @@
 use super::file::*;
 use super::headers::Header;
 use super::status::StatusCode;
+use crate::enums::error::ServerError;
 use crate::structs::htmlbuilder::HTMLBuilder;
 use crate::structs::responsebuilder::ResponseBuilder;
 use std::fs::{self, File};
-use std::io::{Error, ErrorKind, Read};
+use std::io::{self, Error, ErrorKind, Read};
 pub type ErrorResponse = (Header, StatusCode);
 pub type OkResponse = (Header, Option<String>, Option<File>);
 
@@ -16,7 +17,7 @@ pub fn create_file_response(
     file_ext: Option<String>,
     file: Option<File>,
     status_code: u16,
-) -> std::io::Result<String> {
+) -> Result<String, ServerError> {
     let mut file = match file {
         Some(content) => content,
         None => match status_code {
@@ -31,10 +32,10 @@ pub fn create_file_response(
     let mut file_buf = String::new();
 
     if let Err(_) = file.read_to_string(&mut file_buf) {
-        return Err(Error::new(
+        return Err(ServerError::IOError(Error::new(
             ErrorKind::InvalidData,
             "File is not valid UTF-8 data.",
-        ));
+        )));
     }
 
     let mut response = ResponseBuilder::new();
@@ -71,7 +72,7 @@ pub fn create_file_response(
 pub fn create_dir_response(
     req_headers: Header,
     path_iterator: fs::ReadDir,
-) -> std::io::Result<String> {
+) -> Result<String, ServerError> {
     let mut response = ResponseBuilder::new();
 
     // Apply CORS headers
@@ -89,26 +90,39 @@ pub fn create_dir_response(
 
     html.add_to_body("<ul>");
 
-    let mut dirs: Vec<std::ffi::OsString> = vec![];
+    let mut dirs: Vec<String> = vec![];
 
     for item in path_iterator {
         let item = match item {
             Ok(item) => item,
             Err(_) => {
-                return Err(Error::new(
+                return Err(ServerError::IOError(Error::new(
                     ErrorKind::Other,
                     "Failed reading directory item",
-                ))
+                )))
             }
         };
-        let filename = item.file_name();
 
-        dirs.push(filename);
+        let filename = item.file_name();
+        let filename = match filename.to_str() {
+            Some(str) => str,
+            None => {
+                return Err(ServerError::IOError(io::Error::new(
+                    ErrorKind::Other,
+                    "Failed parsing requested file name from OsString to str.",
+                )))
+            }
+        };
+
+        // TODO: add <a href> pointing to file
+        let decorated_filename = format!("{filename}");
+
+        dirs.push(decorated_filename);
     }
 
     for dir in &dirs {
         html.add_to_body("<li>");
-        html.add_to_body(dir.to_str().unwrap());
+        html.add_to_body(dir.as_str());
         html.add_to_body("</li>")
     }
 

@@ -37,19 +37,16 @@ where
         None => "null".to_string(),
     };
 
-    req_headers_ref
-        .borrow_mut()
-        .insert(
-            "Access-Control-Allow-Origin".to_string(),
-            if ALLOW_ALL_ORIGINS {
-                "*".to_string()
-            } else if cors.origin_is_allowed(&origin) {
-                origin.to_string()
-            } else {
-                "null".to_string()
-            },
-        )
-        .unwrap();
+    req_headers_ref.borrow_mut().insert(
+        "Access-Control-Allow-Origin".to_string(),
+        if ALLOW_ALL_ORIGINS {
+            "*".to_string()
+        } else if cors.origin_is_allowed(&origin) {
+            origin.to_string()
+        } else {
+            "null".to_string()
+        },
+    )?;
 
     main_logic(req_headers_ref, buf_utf8, cors, stream)
 }
@@ -112,7 +109,7 @@ where
 
     let requested_content = fs::read_to_string(format!(
         "{ABSOLUTE_STATIC_CONTENT_PATH}/{}",
-        uri.get().clone().unwrap()
+        uri.get().clone()?
     ));
     let response = match requested_content {
         Ok(file) => file,
