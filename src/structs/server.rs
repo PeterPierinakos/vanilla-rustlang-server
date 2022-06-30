@@ -1,3 +1,4 @@
+use crate::enums::error::ServerError;
 use crate::util::file::get_file_extension;
 use crate::util::license::print_license_info;
 use crate::util::response::{create_dir_response, create_file_response};
@@ -41,7 +42,7 @@ impl<'a> Server<'a> {
         })
     }
 
-    pub fn start_multithread(self: Arc<Self>) -> std::io::Result<()>
+    pub fn start_multithread(self: Arc<Self>) -> Result<(), ServerError>
     where
         Self: 'static,
     {
@@ -55,7 +56,7 @@ impl<'a> Server<'a> {
             println!("Production note: security headers are currently turned off, keep it enabled in production!")
         }
 
-        let pool = ThreadPool::new(self.config.num_of_threads).unwrap();
+        let pool = ThreadPool::new(self.config.num_of_threads)?;
 
         for stream in listener.incoming() {
             let self_ref = Arc::clone(&self);
@@ -64,7 +65,7 @@ impl<'a> Server<'a> {
                 let mut stream = stream.unwrap();
                 let response = Self::serve_request(&self_ref, &mut None, &mut stream);
 
-                // The thread currently panics if the response returns an error. TODO: fix the possible error.
+                // Note: `.unwrap()` will only make one of the threads panic in multithreaded mode, so unwrapping instead of returning the error is fine.
                 stream.write_all(&response.unwrap().as_bytes()).unwrap();
                 stream.flush().unwrap();
             });
@@ -73,7 +74,7 @@ impl<'a> Server<'a> {
         Ok(())
     }
 
-    pub fn start_singlethread(&self) -> Result<(), std::io::Error> {
+    pub fn start_singlethread(&self) -> Result<(), ServerError> {
         print_license_info();
 
         let listener = TcpListener::bind(
@@ -110,12 +111,12 @@ impl<'a> Server<'a> {
         }
 
         for stream in listener.incoming() {
-            let mut stream = stream.unwrap();
+            let mut stream = stream?; /* Note that stream is a result. */
 
             let response = self.serve_request(&mut logfile, &stream)?;
 
-            stream.write_all(&response.as_bytes()).unwrap();
-            stream.flush().unwrap();
+            stream.write_all(&response.as_bytes())?;
+            stream.flush()?;
         }
 
         Ok(())
@@ -125,10 +126,10 @@ impl<'a> Server<'a> {
         &self,
         logfile: &mut Option<File>,
         input: impl Read,
-    ) -> std::io::Result<String> {
+    ) -> Result<String, ServerError> {
         let (mut req_headers, buf) = match read_stream(input) {
             Ok((headers, buf)) => (headers, buf),
-            Err(status) => return create_file_response(HashMap::new(), None, None, status),
+            Err(status) => return Ok(create_file_response(HashMap::new(), None, None, status)?),
         };
 
         let origin = match req_headers.get("Origin") {
@@ -221,8 +222,7 @@ HEADERS: {:?}
 #[cfg(fuzzing)]
 pub fn fuzz_serve_request(body: &[u8]) {
     let logs_path = std::env::temp_dir()
-        .canonicalize()
-        .unwrap()
+        .canonicalize()?
         .to_string_lossy()
         .into_owned();
     let configuration = Configuration {
@@ -251,6 +251,7 @@ pub fn fuzz_serve_request(body: &[u8]) {
 
 #[cfg(test)]
 mod tests {
+    use crate::enums::error::ServerError;
     use crate::enums::http::HttpProtocolVersion;
     use crate::structs::configuration::Configuration;
     use crate::structs::server::Server;
@@ -312,99 +313,101 @@ mod tests {
     /// Given an response HTTP response, returns the status code.
     ///
     /// This function is simple and will panic on malformed HTTP.
-    fn get_response_code(body: &str) -> u16 {
+    fn get_response_code(body: &str) -> Result<u16, ServerError> {
         let first_line = body.lines().next().expect("response body is empty");
         let response_code = first_line
             .split(' ')
             .nth(1)
             .expect("response body's first line is too short");
-        response_code.parse().unwrap()
+        let parsed = response_code.parse()?;
+        Ok(parsed)
     }
 
     #[test]
-    fn get_index_is_ok() {
+    fn get_index_is_ok() -> Result<(), ServerError> {
         let test_server = create_test_server();
-        let req = test_server
-            .serve_request(
-                &mut None,
-                create_test_buffer(
-                    "GET / HTTP/1.1",
-                    vec!["User-Agent:rust", "Origin:localhost"],
-                ),
-            )
-            .unwrap();
-        assert_eq!(get_response_code(&req), 200);
+        let req = test_server.serve_request(
+            &mut None,
+            create_test_buffer(
+                "GET / HTTP/1.1",
+                vec!["User-Agent:rust", "Origin:localhost"],
+            ),
+        )?;
+        assert_eq!(get_response_code(&req)?, 200);
+
+        Ok(())
     }
 
     #[test]
-    fn no_headers_is_bad_request() {
+    fn no_headers_is_bad_request() -> Result<(), ServerError> {
         let test_server = create_test_server();
-        let req = test_server
-            .serve_request(&mut None, create_test_buffer("GET / HTTP/1.1", vec![]))
-            .unwrap();
-        assert_eq!(get_response_code(&req), 400);
+        let req =
+            test_server.serve_request(&mut None, create_test_buffer("GET / HTTP/1.1", vec![]))?;
+        assert_eq!(get_response_code(&req)?, 400);
+
+        Ok(())
     }
 
     #[test]
-    fn nonexistent_file_is_not_found() {
+    fn nonexistent_file_is_not_found() -> Result<(), ServerError> {
         let test_server = create_test_server();
-        let req = test_server
-            .serve_request(
-                &mut None,
-                create_test_buffer(
-                    "GET /notfound HTTP/1.1",
-                    vec!["User-Agent:rust", "Origin:localhost"],
-                ),
-            )
-            .unwrap();
-        assert_eq!(get_response_code(&req), 404);
+        let req = test_server.serve_request(
+            &mut None,
+            create_test_buffer(
+                "GET /notfound HTTP/1.1",
+                vec!["User-Agent:rust", "Origin:localhost"],
+            ),
+        )?;
+        assert_eq!(get_response_code(&req)?, 404);
+
+        Ok(())
     }
 
     #[test]
-    fn path_traversal_is_bad_request() {
+    fn path_traversal_is_bad_request() -> Result<(), ServerError> {
         let test_server = create_test_server();
-        let req = test_server
-            .serve_request(
-                &mut None,
-                create_test_buffer(
-                    "GET /../../../etc/passwd HTTP/1.1",
-                    vec!["User-Agent:rust", "Origin:localhost"],
-                ),
-            )
-            .unwrap();
-        assert_eq!(get_response_code(&req), 400);
+        let req = test_server.serve_request(
+            &mut None,
+            create_test_buffer(
+                "GET /../../../etc/passwd HTTP/1.1",
+                vec!["User-Agent:rust", "Origin:localhost"],
+            ),
+        )?;
+        assert_eq!(get_response_code(&req)?, 400);
+
+        Ok(())
     }
 
     #[test]
-    fn forbidden_method_is_not_allowed() {
+    fn forbidden_method_is_not_allowed() -> Result<(), ServerError> {
         let test_server = create_test_server();
-        let req = test_server
-            .serve_request(
-                &mut None,
-                create_test_buffer(
-                    "POST / HTTP/1.1",
-                    vec!["User-Agent:rust", "Origin:localhost"],
-                ),
-            )
-            .unwrap();
-        assert_eq!(get_response_code(&req), 405);
+        let req = test_server.serve_request(
+            &mut None,
+            create_test_buffer(
+                "POST / HTTP/1.1",
+                vec!["User-Agent:rust", "Origin:localhost"],
+            ),
+        )?;
+        assert_eq!(get_response_code(&req)?, 405);
+
+        Ok(())
     }
 
     #[test]
-    fn no_crash_on_empty_body() {
+    fn no_crash_on_empty_body() -> Result<(), ServerError> {
         let test_server = create_test_server();
-        let res = test_server
-            .serve_request(&mut None, Cursor::new([]))
-            .unwrap();
-        assert_eq!(get_response_code(&res), 400);
+        let res = test_server.serve_request(&mut None, Cursor::new([]))?;
+        assert_eq!(get_response_code(&res)?, 400);
+
+        Ok(())
     }
 
     #[test]
-    fn no_crash_on_bad_unicode() {
+    fn no_crash_on_bad_unicode() -> Result<(), ServerError> {
         let test_server = create_test_server();
-        let res = test_server
-            .serve_request(&mut None, Cursor::new([0xc6]))
-            .unwrap();
-        assert_eq!(get_response_code(&res), 400);
+        let res = test_server.serve_request(&mut None, Cursor::new([0xc6]))?;
+        assert_eq!(get_response_code(&res)?, 400);
+
+        Ok(())
     }
 }

@@ -3,10 +3,11 @@
 use std::sync::Arc;
 
 use vrs::configuration::*;
+use vrs::enums::error::ServerError;
 use vrs::structs::configuration::Configuration;
 use vrs::structs::server::Server;
 
-pub fn main() -> std::io::Result<()> {
+pub fn main() -> Result<(), ServerError> {
     /* Stock configuration for VRS. Globals should not be used in test cases. */
     let config = Configuration {
         absolute_static_content_path: ABSOLUTE_STATIC_CONTENT_PATH,
