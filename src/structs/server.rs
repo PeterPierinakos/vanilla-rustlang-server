@@ -243,10 +243,8 @@ pub fn fuzz_serve_request(body: &[u8]) {
         http_protocol_version: crate::enums::http::HttpProtocolVersion::OneDotOne,
         security_headers: false,
     };
-    let server = Server::new(configuration).expect("server setup failed");
-    server
-        .serve_request(&mut None, body)
-        .expect("request failed");
+    let server = Server::new(configuration)?;
+    server.serve_request(&mut None, body)?;
 }
 
 #[cfg(test)]
