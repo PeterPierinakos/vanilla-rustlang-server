@@ -308,7 +308,7 @@ mod tests {
         Cursor::new(buf_utf8.into_bytes())
     }
 
-    /// Given an response HTTP response, returns the status code.
+    /// Given a HTTP response, returns the status code.
     ///
     /// This function is simple and will panic on malformed HTTP.
     fn get_response_code(body: &str) -> Result<u16, ServerError> {
