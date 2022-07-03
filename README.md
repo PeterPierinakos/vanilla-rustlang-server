@@ -1,3 +1,5 @@
+> Note: this project has reached stable released and the features I wanted to be implemented have been added and the reported issues have been resolved. Most of the new releases from now are mostly going to be bug fixes security patches and crash fixes.
+
 # Vanilla-RustLang-Server (VRS) 🦀
 
 VRS is a simple, minimal, free and open source static web server written in Rust which uses absolutely no dependencies and revolves around Rust's std::net built-in utility.
