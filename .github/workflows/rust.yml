@@ -21,4 +21,4 @@ jobs:
     - name: Lint
       run: cargo clippy --verbose
     - name: Run tests
-      run: ./setup.sh && cargo test --verbose
+      run: cargo test --verbose
