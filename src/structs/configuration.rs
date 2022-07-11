@@ -14,6 +14,8 @@ pub struct Configuration<'a> {
     pub allowed_origins: Vec<&'a str>,
     pub security_headers: bool,
     pub allow_iframes: bool,
+    pub append_extra_headers: bool,
+    pub extra_headers: Vec<[&'a str; 2]>,
 }
 
 /* yuck */
@@ -34,6 +36,8 @@ impl<'a> Clone for Configuration<'a> {
             allowed_origins: self.allowed_origins.clone(),
             security_headers: self.security_headers,
             allow_iframes: self.allow_iframes,
+            append_extra_headers: self.append_extra_headers,
+            extra_headers: self.extra_headers.clone()
         }
     }
 }

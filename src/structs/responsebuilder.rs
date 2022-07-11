@@ -71,6 +71,10 @@ impl<'a> ResponseBuilder<'a> {
         self.headers.insert(key, val);
     }
 
+    pub fn get_headers(&self) -> Header {
+        self.headers.clone()
+    }
+
     pub fn construct(&self) -> String {
         let mut response = String::new();
 
