@@ -63,3 +63,15 @@ You should not turn this off. When enabled requests are sent some additional HTT
 - ALLOW_IFRAMES
 
 Enable if you want to allow other web apps to embed your website inside them. May make common attacks possible, not recommended to enable unless necessary.
+
+- APPEND_EXTRA_HEADERS
+
+If you wish to apply the EXTRA_HEADERS to every single server response, set this bootlean to true.
+
+- EXTRA_HEADERS
+
+Additional headers you can specify which will be applied to every server response as long as APPEND_EXTRA_HEADERS is set to true.
+
+- EXTRA_HEADERS_SIZE
+
+Convenience variable for specifying the size of the EXTRA_HEADERS 2-dimensional array. You may remove it and hard-code the number if you wish to.
