@@ -6,17 +6,25 @@ use crate::structs::htmlbuilder::HTMLBuilder;
 use crate::structs::responsebuilder::ResponseBuilder;
 use std::fs::{self, File};
 use std::io::{self, Error, ErrorKind, Read};
+use crate::structs::configuration::Configuration;
+
 pub type ErrorResponse = (Header, StatusCode);
 pub type OkResponse = (Header, Option<String>, Option<File>);
 
 /* Headers, Status Code, Response File */
 pub type ServerResponse<'a> = Result<OkResponse, ErrorResponse>;
 
+/// Returns a full HTTP response with the requested file.
+///
+/// # Panics
+///
+/// Panics if the provided status code is invalid.
 pub fn create_file_response(
     req_headers: Header,
     file_ext: Option<String>,
     file: Option<File>,
     status_code: u16,
+    config: &Configuration,
 ) -> Result<String, ServerError> {
     let mut file = match file {
         Some(content) => content,
@@ -39,6 +47,10 @@ pub fn create_file_response(
     }
 
     let mut response = ResponseBuilder::new();
+
+    if config.append_extra_headers {
+        apply_extra_headers(&mut response, &config.extra_headers);    
+    }
 
     // Apply CORS headers
     match req_headers.get("Access-Control-Allow-Origin") {
@@ -72,8 +84,13 @@ pub fn create_file_response(
 pub fn create_dir_response(
     req_headers: Header,
     path_iterator: fs::ReadDir,
+    config: &Configuration,
 ) -> Result<String, ServerError> {
     let mut response = ResponseBuilder::new();
+
+    if config.append_extra_headers {
+        apply_extra_headers(&mut response, &config.extra_headers);    
+    }
 
     // Apply CORS headers
     match req_headers.get("Access-Control-Allow-Origin") {
@@ -140,4 +157,13 @@ pub fn create_dir_response(
     response.body(doc.as_str());
 
     Ok(response.construct())
+}
+
+/// Used to apply the extra headers specified in the configuration file.
+///
+/// Borrows an instance of `ResponseBuilder` in order to apply them.
+pub fn apply_extra_headers(response: &mut ResponseBuilder, extra_headers: &Vec<[&str; 2]>) {
+    for header in extra_headers.iter() {
+        response.add_header(header[0].into(), header[1].into())
+    }
 }

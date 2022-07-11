@@ -23,6 +23,8 @@ pub fn main() -> Result<(), ServerError> {
         allowed_origins: ALLOWED_ORIGINS.to_vec(),
         security_headers: SECURITY_HEADERS,
         allow_iframes: ALLOW_IFRAMES,
+        append_extra_headers: APPEND_EXTRA_HEADERS,
+        extra_headers: EXTRA_HEADERS.to_vec(),
     };
 
     let server = Arc::new(Server::new(config.clone())?);

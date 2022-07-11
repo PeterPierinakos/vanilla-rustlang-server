@@ -33,7 +33,7 @@ checksum = "7709cef83f0c1f58f666e746a08b21e0085f7440fa6a29cc194d68aac97a4225"
 
 [[package]]
 name = "vrs"
-version = "1.1.1"
+version = "1.1.2"
 
 [[package]]
 name = "vrs-fuzz"
