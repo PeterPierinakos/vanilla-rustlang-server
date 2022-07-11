@@ -1,34 +1,3 @@
-/// This function only compiles when fuzzing, and exposes the server without actually opening and connecting to a port.
-#[cfg(fuzzing)]
-pub fn fuzz_serve_request(body: &[u8]) {
-    let logs_path = std::env::temp_dir()
-        .canonicalize()?
-        .to_string_lossy()
-        .into_owned();
-    let configuration = Configuration {
-        absolute_logs_path: &logs_path,
-        absolute_static_content_path: concat!(env!("CARGO_MANIFEST_DIR"), "/", "tests/static"),
-        addr: "localhost",
-        // Setting the port to 0 takes advantage of an OS behavior that
-        // always uses a free port when assigned in this manner on all
-        // major platforms.
-        port: 0,
-        allow_all_origins: false,
-        allow_iframes: false,
-        allowed_methods: vec!["GET"],
-        allowed_origins: vec!["localhost"],
-        save_logs: false,
-        multithreading: false,
-        num_of_threads: 1,
-        http_protocol_version: HttpProtocolVersion::OneDotOne, 
-        security_headers: false,
-        append_extra_headers: false,
-        extra_headers: vec![],
-    };
-    let server = Server::new(configuration)?;
-    server.serve_request(&mut None, body)?;
-}
-
 #[cfg(test)]
 mod tests {
     use vrs::enums::error::ServerError;
