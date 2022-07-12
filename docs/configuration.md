@@ -75,3 +75,7 @@ Additional headers you can specify which will be applied to every server respons
 - EXTRA_HEADERS_SIZE
 
 Convenience variable for specifying the size of the EXTRA_HEADERS 2-dimensional array. You may remove it and hard-code the number if you wish to.
+
+- ALLOW_DIRECTORY_LISTING
+
+Boolean value to specify whether you want the server to allow listing the contents of a directory whenever a user tries to access a directory and not particularly a file.
