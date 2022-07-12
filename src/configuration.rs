@@ -4,7 +4,6 @@ Read the documentation if you want to find out how any of these configuration va
 
 */
 
-
 use crate::enums::http::HttpProtocolVersion;
 
 pub const ABSOLUTE_STATIC_CONTENT_PATH: &str = "/var/www/static";
@@ -40,3 +39,5 @@ pub const EXTRA_HEADERS_SIZE: usize = 0;
  * convenience. */
 // Example: ["ServerHost", "VanillaRustlangServer"]
 pub const EXTRA_HEADERS: [[&str; 2]; EXTRA_HEADERS_SIZE] = []; 
+
+pub const ALLOW_DIRECTORY_LISTING: bool = true;

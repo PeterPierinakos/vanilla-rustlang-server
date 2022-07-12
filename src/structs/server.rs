@@ -194,11 +194,16 @@ HEADERS: {:?}
         let path = Path::new(&absolute_path);
 
         if path.is_dir() {
-            let path_iter = match path.read_dir() {
-                Ok(iter) => iter,
-                Err(_) => return create_file_response(req_headers, None, None, 500, &self.config),
-            };
-            return create_dir_response(req_headers, path_iter, &self.config);
+            if self.config.allow_directory_listing {
+                let path_iter = match path.read_dir() {
+                    Ok(iter) => iter,
+                    Err(_) => return create_file_response(req_headers, None, None, 500, &self.config),
+                };
+                return create_dir_response(req_headers, path_iter, &self.config);
+            }
+            else {
+                return create_file_response(req_headers, None, None, 404, &self.config);
+            }
         }
 
         let requested_content =

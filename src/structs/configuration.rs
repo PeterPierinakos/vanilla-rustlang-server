@@ -16,6 +16,7 @@ pub struct Configuration<'a> {
     pub allow_iframes: bool,
     pub append_extra_headers: bool,
     pub extra_headers: Vec<[&'a str; 2]>,
+    pub allow_directory_listing: bool, 
 }
 
 /* yuck */
@@ -37,7 +38,8 @@ impl<'a> Clone for Configuration<'a> {
             security_headers: self.security_headers,
             allow_iframes: self.allow_iframes,
             append_extra_headers: self.append_extra_headers,
-            extra_headers: self.extra_headers.clone()
+            extra_headers: self.extra_headers.clone(),
+            allow_directory_listing: self.allow_directory_listing,
         }
     }
 }
