@@ -10,7 +10,6 @@ pub enum ServerError {
 
 impl fmt::Display for ServerError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        // TODO: change message
         write!(f, "{}", ServerError::UnknownError)
     }
 }

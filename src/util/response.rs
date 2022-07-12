@@ -131,7 +131,6 @@ pub fn create_dir_response(
             }
         };
 
-        // TODO: add <a href> pointing to file
         let decorated_filename = format!("{filename}");
 
         dirs.push(decorated_filename);
