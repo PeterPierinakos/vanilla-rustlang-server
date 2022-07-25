@@ -38,7 +38,7 @@ A static web server is a kind of web server which only serves static content. Th
 
 ### License
 
-VRS is licensed under the [MIT License](https://mit-license.org/).
+VRS is licensed under either [MIT](LICENSE-MIT) or [Apache 2.0](LICENSE-APACHE) at your option.
 
 ### When to use VRS?
 
