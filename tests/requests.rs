@@ -40,6 +40,7 @@ mod tests {
             security_headers: false,
             append_extra_headers: false,
             extra_headers: vec![],
+            allow_directory_listing: true,
         })
         .expect("test server creation failed")
     }
