@@ -1,4 +1,4 @@
-use crate::enums::http::HttpProtocolVersion;
+use crate::http::HttpProtocolVersion;
 
 pub struct Configuration<'a> {
     pub absolute_static_content_path: &'a str,
@@ -16,11 +16,10 @@ pub struct Configuration<'a> {
     pub allow_iframes: bool,
     pub append_extra_headers: bool,
     pub extra_headers: Vec<[&'a str; 2]>,
-    pub allow_directory_listing: bool, 
+    pub allow_directory_listing: bool,
 }
 
-/* yuck */
-
+// Cloning is required by the `Server`.
 impl<'a> Clone for Configuration<'a> {
     fn clone(&self) -> Self {
         Self {

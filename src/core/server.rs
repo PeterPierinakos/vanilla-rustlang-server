@@ -1,9 +1,9 @@
-use crate::enums::error::ServerError;
-use crate::util::file::get_file_extension;
-use crate::util::license::print_license_info;
-use crate::util::response::{create_dir_response, create_file_response};
-use crate::util::socket::{parse_utf8, read_stream};
-use crate::util::time::generate_unixtime;
+use super::socket::{parse_utf8, read_stream};
+use crate::error::ServerError;
+use crate::file::get_file_extension;
+use crate::license::print_license_info;
+use crate::response::utils::{create_dir_response, create_file_response};
+use crate::time::generate_unixtime;
 
 use std::collections::HashMap;
 use std::fs::{self, File};
@@ -16,8 +16,8 @@ use std::{fs::OpenOptions, net::TcpListener};
 
 use super::configuration::Configuration;
 use super::cors::Cors;
-use super::thread::ThreadPool;
 use super::uri::URI;
+use crate::thread::ThreadPool;
 
 pub struct Server<'a> {
     unixtime: u64,
@@ -129,7 +129,15 @@ impl<'a> Server<'a> {
     ) -> Result<String, ServerError> {
         let (mut req_headers, buf) = match read_stream(input) {
             Ok((headers, buf)) => (headers, buf),
-            Err(status) => return Ok(create_file_response(HashMap::new(), None, None, status, &self.config)?),
+            Err(status) => {
+                return Ok(create_file_response(
+                    HashMap::new(),
+                    None,
+                    None,
+                    status,
+                    &self.config,
+                )?)
+            }
         };
 
         let origin = match req_headers.get("Origin") {
@@ -171,7 +179,9 @@ HEADERS: {:?}
 
         let buf_utf8 = match parse_utf8(&req_headers, &buf) {
             Ok(utf8) => utf8,
-            Err((headers, status)) => create_file_response(headers, None, None, status, &self.config)?,
+            Err((headers, status)) => {
+                create_file_response(headers, None, None, status, &self.config)?
+            }
         };
 
         if !self.cors.method_is_allowed(&buf_utf8) {
@@ -197,11 +207,12 @@ HEADERS: {:?}
             if self.config.allow_directory_listing {
                 let path_iter = match path.read_dir() {
                     Ok(iter) => iter,
-                    Err(_) => return create_file_response(req_headers, None, None, 500, &self.config),
+                    Err(_) => {
+                        return create_file_response(req_headers, None, None, 500, &self.config)
+                    }
                 };
                 return create_dir_response(req_headers, path_iter, &self.config);
-            }
-            else {
+            } else {
                 return create_file_response(req_headers, None, None, 404, &self.config);
             }
         }
@@ -219,7 +230,7 @@ HEADERS: {:?}
             Some(get_file_extension(uri.get().clone().unwrap().as_str()).to_string()),
             Some(response),
             200,
-            &self.config
+            &self.config,
         )
     }
 }

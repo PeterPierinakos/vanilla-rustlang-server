@@ -1,10 +1,10 @@
 use std::io::Read;
 use std::str;
 
-use super::status::StatusCode;
-use super::{
+use crate::status::StatusCode;
+use crate::{
     headers::{find_buf_headers, Header},
-    response::ErrorResponse,
+    response::utils::ErrorResponse,
 };
 
 /* Verifies that the socket has valid request data, otherwise error. */

@@ -1,4 +1,4 @@
-use super::status::StatusCode;
+use crate::status::StatusCode;
 use std::collections::HashMap;
 use std::str;
 
