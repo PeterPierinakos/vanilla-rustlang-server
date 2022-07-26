@@ -1,9 +1,9 @@
 use std::collections::HashMap;
 
 use crate::configuration::{ALLOW_IFRAMES, HTTP_PROTOCOL_VERSION, SECURITY_HEADERS};
-use crate::enums::http::HttpProtocolVersion;
-use crate::util::headers::Header;
-use crate::util::status::StatusCode;
+use crate::headers::Header;
+use crate::http::HttpProtocolVersion;
+use crate::status::StatusCode;
 
 pub struct ResponseBuilder<'a> {
     protocol: Option<&'a str>,

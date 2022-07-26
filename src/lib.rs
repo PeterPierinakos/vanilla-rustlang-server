@@ -1,4 +1,11 @@
 pub mod configuration;
-pub mod enums;
-pub mod structs;
-pub mod util;
+pub mod core;
+pub mod error;
+pub mod file;
+pub mod headers;
+pub mod http;
+pub mod license;
+pub mod response;
+pub mod status;
+pub mod thread;
+pub mod time;

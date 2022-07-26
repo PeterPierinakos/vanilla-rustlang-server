@@ -3,9 +3,9 @@
 use std::sync::Arc;
 
 use vrs::configuration::*;
-use vrs::enums::error::ServerError;
-use vrs::structs::configuration::Configuration;
-use vrs::structs::server::Server;
+use vrs::core::configuration::Configuration;
+use vrs::core::server::Server;
+use vrs::error::ServerError;
 
 pub fn main() -> Result<(), ServerError> {
     /* Stock configuration for VRS. Globals should not be used in test cases. */

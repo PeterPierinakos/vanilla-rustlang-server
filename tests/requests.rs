@@ -1,10 +1,10 @@
 #[cfg(test)]
 mod tests {
-    use vrs::enums::error::ServerError;
-    use vrs::enums::http::HttpProtocolVersion;
-    use vrs::structs::configuration::Configuration;
-    use vrs::structs::server::Server;
     use std::io::Cursor;
+    use vrs::core::configuration::Configuration;
+    use vrs::core::server::Server;
+    use vrs::error::ServerError;
+    use vrs::http::HttpProtocolVersion;
 
     // This is thread local to make it possible to get around the lack of a suitable once_cell in std.
     // Note that this will leak memory in each thread that references it, and is therefore not well-suited for many tasks.
@@ -163,4 +163,3 @@ mod tests {
         Ok(())
     }
 }
-

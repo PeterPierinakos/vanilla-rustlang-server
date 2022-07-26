@@ -1,12 +1,12 @@
-use super::file::*;
-use super::headers::Header;
-use super::status::StatusCode;
-use crate::enums::error::ServerError;
-use crate::structs::htmlbuilder::HTMLBuilder;
-use crate::structs::responsebuilder::ResponseBuilder;
+use super::builder::ResponseBuilder;
+use super::htmlbuilder::HTMLBuilder;
+use crate::core::configuration::Configuration;
+use crate::error::ServerError;
+use crate::file::*;
+use crate::headers::Header;
+use crate::status::StatusCode;
 use std::fs::{self, File};
 use std::io::{self, Error, ErrorKind, Read};
-use crate::structs::configuration::Configuration;
 
 pub type ErrorResponse = (Header, StatusCode);
 pub type OkResponse = (Header, Option<String>, Option<File>);
@@ -49,7 +49,7 @@ pub fn create_file_response(
     let mut response = ResponseBuilder::new();
 
     if config.append_extra_headers {
-        apply_extra_headers(&mut response, &config.extra_headers);    
+        apply_extra_headers(&mut response, &config.extra_headers);
     }
 
     // Apply CORS headers
@@ -89,7 +89,7 @@ pub fn create_dir_response(
     let mut response = ResponseBuilder::new();
 
     if config.append_extra_headers {
-        apply_extra_headers(&mut response, &config.extra_headers);    
+        apply_extra_headers(&mut response, &config.extra_headers);
     }
 
     // Apply CORS headers
