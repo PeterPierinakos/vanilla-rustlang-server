@@ -20,36 +20,12 @@ mod tests {
     }
 
     fn create_test_server() -> Server<'static> {
-        let logs_path = LOGS_PATH.with(|logs_path| *logs_path);
-        Server::new(Configuration {
-            absolute_logs_path: logs_path,
-            absolute_static_content_path: concat!(env!("CARGO_MANIFEST_DIR"), "/", "tests/static"),
-            addr: "localhost",
-            // Setting the port to 0 takes advantage of an OS behavior that
-            // always uses a free port when assigned in this manner on all
-            // major platforms.
-            port: 0,
-            allow_all_origins: false,
-            allow_iframes: false,
-            allowed_methods: vec!["GET"],
-            allowed_origins: vec!["localhost"],
-            save_logs: false,
-            multithreading: false,
-            num_of_threads: 1,
-            http_protocol_version: HttpProtocolVersion::OneDotOne,
-            use_security_headers: false,
-            append_extra_headers: false,
-            extra_headers: vec![],
-            allow_directory_listing: true,
-            print_license_info: false,
-            use_time_header: false,
-        })
-        .expect("test server creation failed")
+        Server::new(Configuration::test_config()).expect("test server creation failed")
     }
 
     /// Create a request buffer for testing the server's core, with the arguments being stringly typed.
     /// info: the main part of the HTTP request (e.g. "GET / HTTP/1.1")
-    /// headers: the headers of the HTTP requests (e.g. "Origin:localhost")
+    /// headers: the headers of the HTTP request (e.g. "Origin:localhost")
     fn create_test_buffer(info: &str, headers: Vec<&str>) -> Cursor<Vec<u8>> {
         let mut buf_utf8 = String::new();
 

@@ -73,4 +73,30 @@ impl<'a> Configuration<'a> {
             use_time_header: USE_TIME_HEADER,
         }
     }
+
+    pub fn test_config() -> Self {
+        Configuration {
+            absolute_logs_path: ABSOLUTE_LOGS_PATH,
+            absolute_static_content_path: "media",
+            addr: "localhost",
+            // Setting the port to 0 takes advantage of an OS behavior that
+            // always uses a free port when assigned in this manner on all
+            // major platforms.
+            port: 0,
+            allow_all_origins: false,
+            allow_iframes: false,
+            allowed_methods: vec!["GET"],
+            allowed_origins: vec!["localhost"],
+            save_logs: false,
+            multithreading: false,
+            num_of_threads: 1,
+            http_protocol_version: HttpProtocolVersion::OneDotOne,
+            use_security_headers: false,
+            append_extra_headers: false,
+            extra_headers: vec![],
+            allow_directory_listing: true,
+            print_license_info: false,
+            use_time_header: false,
+        }
+    }
 }

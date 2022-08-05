@@ -1,29 +1,30 @@
-use std::collections::HashMap;
-
-use crate::configuration::{ALLOW_IFRAMES, HTTP_PROTOCOL_VERSION, USE_SECURITY_HEADERS};
+use crate::core::configuration::Configuration;
 use crate::headers::Header;
 use crate::http::HttpProtocolVersion;
 use crate::status::StatusCode;
+use std::collections::HashMap;
 
 pub struct ResponseBuilder<'a> {
     protocol: Option<&'a str>,
     status_code: Option<StatusCode>,
     body: Option<&'a str>,
     headers: Header,
+    config: Configuration<'a>,
 }
 
 impl<'a> ResponseBuilder<'a> {
-    pub fn new() -> Self {
+    pub fn new(config: Configuration<'a>) -> Self {
         Self {
             protocol: None,
             status_code: None,
             body: None,
             headers: HashMap::new(),
+            config: config,
         }
     }
 
     pub fn detect_protocol(&mut self) {
-        if HTTP_PROTOCOL_VERSION == HttpProtocolVersion::OneDotOne {
+        if self.config.http_protocol_version == HttpProtocolVersion::OneDotOne {
             self.protocol = Some("HTTP/1.1");
         } else {
             self.protocol = Some("HTTP/2");
@@ -44,7 +45,7 @@ impl<'a> ResponseBuilder<'a> {
         self.add_header("X-Content-Type-Options".to_string(), "nosniff".to_string());
 
         /* Prevent clickjacking */
-        if !ALLOW_IFRAMES {
+        if !self.config.allow_iframes {
             self.add_header("X-Frame-Options".to_string(), "DENY".to_string());
         }
 
