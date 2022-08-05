@@ -1,23 +1,19 @@
+use super::configuration::Configuration;
+use super::cors::Cors;
 use super::socket::{parse_utf8, read_stream};
+use super::uri::URI;
 use crate::error::ServerError;
 use crate::file::get_file_extension;
 use crate::license::print_license_info;
 use crate::response::utils::{create_dir_response, create_file_response};
+use crate::thread::ThreadPool;
 use crate::time::generate_unixtime;
-
 use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::{Read, Write};
-
 use std::path::Path;
 use std::sync::Arc;
-
 use std::{fs::OpenOptions, net::TcpListener};
-
-use super::configuration::Configuration;
-use super::cors::Cors;
-use super::uri::URI;
-use crate::thread::ThreadPool;
 
 pub struct Server<'a> {
     unixtime: u64,
@@ -32,13 +28,13 @@ impl<'a> Server<'a> {
         let config_ref = config.clone();
 
         Ok(Self {
-            unixtime: unixtime,
+            unixtime,
             cors: Cors::new(
                 config_ref.allowed_origins,
                 config_ref.allow_all_origins,
                 config_ref.allowed_methods,
             )?,
-            config: config,
+            config,
         })
     }
 
@@ -46,13 +42,15 @@ impl<'a> Server<'a> {
     where
         Self: 'static,
     {
-        print_license_info();
+        if self.config.print_license_info {
+            print_license_info();
+        }
 
         let listener = TcpListener::bind(
             [self.config.addr, ":", self.config.port.to_string().as_str()].concat(),
         )?;
 
-        if !self.config.security_headers {
+        if !self.config.use_security_headers {
             println!("Production note: security headers are currently turned off, keep it enabled in production!")
         }
 
@@ -75,7 +73,9 @@ impl<'a> Server<'a> {
     }
 
     pub fn start_singlethread(&self) -> Result<(), ServerError> {
-        print_license_info();
+        if self.config.print_license_info {
+            print_license_info();
+        }
 
         let listener = TcpListener::bind(
             [self.config.addr, ":", self.config.port.to_string().as_str()].concat(),
@@ -106,7 +106,7 @@ impl<'a> Server<'a> {
             None
         };
 
-        if !self.config.security_headers {
+        if !self.config.use_security_headers {
             println!("Production note: security headers are currently turned off, keep it enabled in production!");
         }
 

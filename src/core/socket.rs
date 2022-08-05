@@ -1,6 +1,5 @@
 use std::io::Read;
 use std::str;
-
 use crate::status::StatusCode;
 use crate::{
     headers::{find_buf_headers, Header},

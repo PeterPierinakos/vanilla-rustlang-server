@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::configuration::{ALLOW_IFRAMES, HTTP_PROTOCOL_VERSION, SECURITY_HEADERS};
+use crate::configuration::{ALLOW_IFRAMES, HTTP_PROTOCOL_VERSION, USE_SECURITY_HEADERS};
 use crate::headers::Header;
 use crate::http::HttpProtocolVersion;
 use crate::status::StatusCode;
@@ -40,10 +40,6 @@ impl<'a> ResponseBuilder<'a> {
 
     */
     pub fn apply_security_headers(&mut self) {
-        if !SECURITY_HEADERS {
-            return;
-        }
-
         /* Prevent malicious HTML */
         self.add_header("X-Content-Type-Options".to_string(), "nosniff".to_string());
 
