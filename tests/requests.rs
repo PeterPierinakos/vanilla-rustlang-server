@@ -4,7 +4,6 @@ mod tests {
     use vrs::core::configuration::Configuration;
     use vrs::core::server::Server;
     use vrs::error::ServerError;
-    use vrs::http::HttpProtocolVersion;
 
     // This is thread local to make it possible to get around the lack of a suitable once_cell in std.
     // Note that this will leak memory in each thread that references it, and is therefore not well-suited for many tasks.

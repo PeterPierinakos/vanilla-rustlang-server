@@ -1,4 +1,3 @@
-use crate::configuration::ABSOLUTE_STATIC_CONTENT_PATH;
 use crate::error::ServerError;
 use std::fs::File;
 use std::{fs, io};
