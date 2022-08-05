@@ -8,17 +8,17 @@ There are many useful "settings" VRS provides in order to customize the web serv
 
 ### Are the default configurations safe?
 
-By default, we have set the configuration to be production-ready so that you do not have to tinker with the settings a lot. Do not be a fraid to leave the configuration as it is, it is secure enough by default. Certain configurations such as SECURITY_HEADERS should only be turned off if you know what you are doing.
+By default, we have set the configuration to be production-ready so that you do not have to tinker with the settings a lot. Do not be a fraid to leave the configuration as it is, it is secure enough by default. Certain configurations such as USE\_SECURITY\_HEADERS should only be turned off if you know what you are doing.
 
 ### Configurations in configuration.rs explained
 
-- ABSOLUTE_STATIC_CONTENT_PATH
+- ABSOLUTE\_STATIC\_CONTENT\_PATH
 
 You should provide this variable the absolute path (/absolute/path/to/static/) which should contain all the static files you went the web server to serve. The web server will take care of serving the files, all you need to know is that you need to put the same path inside the $STATIC variable in setup.sh.
 
-- ABSOLUTE_LOGS_PATH
+- ABSOLUTE\_LOGS\_PATH
 
-The absolute path to which the server request logs should be saved (/absolute/path/to/logs/). Note that this can be empty if MULTITHREADING or SAVE_LOGS is enabled because the server doesn't save logs when either are enabled.
+The absolute path to which the server request logs should be saved (/absolute/path/to/logs/). Note that this can be empty if MULTITHREADING or SAVE\_LOGS is enabled because the server doesn't save logs when either are enabled.
 
 - ADDR
 
@@ -28,7 +28,7 @@ The IPv4 the server should use (e.g. 0.0.0.0 or 127.0.0.1). Change it to 127.0.0
 
 The port that will be used by the server. The default port for HTTP is 80, and for HTTPS 443.
 
-- SAVE_LOGS
+- SAVE\_LOGS
 
 Boolean for specifying whether you want the server to save request logs or not.
 
@@ -36,46 +36,54 @@ Boolean for specifying whether you want the server to save request logs or not.
 
 Specify whether you want the server to use multiple threads (workers) or not. Logs aren't supported when using this functionality.
 
-- NUM_OF_THREADS
+- NUM\_OF\_THREADS
 
 If MULTITHREADING is enabled, you may enter a valid (unsigned integer) number greater than 0 in order to specify the number of threads the server should cap at. If you specify 0, the server will panic because that is an invalid number of threads.
 
-- HTTP_PROTOCOL_VERSION
+- HTTP\_PROTOCOL\_VERSION
 
 Enum for specifying whether you want to use HTTP/1.1 or HTTP/2. Note that for API clients such as Postman HTTP/2 is not supported.
 
-- ALLOW_ALL_ORIGINS (CORS)
+- ALLOW\_ALL\_ORIGINS (CORS)
 
 Specify whether you want to allow external web servers (outside your local network) to fetch data from VRS. There shouldn't be any problem with keeping this on.
 
-- ALLOWED_ORIGINS (CORS)
+- ALLOWED\_ORIGINS (CORS)
 
-If you don't want to allow all origins as explained above, you may also just allow specific origins to fetch data from the server. If you want to block all origins, set ALLOW_ALL_ORIGINS to false and leave the ALLOWED_ORIGINS array empty.
+If you don't want to allow all origins as explained above, you may also just allow specific origins to fetch data from the server. If you want to block all origins, set ALLOW\_ALL\_ORIGINS to false and leave the ALLOWED\_ORIGINS array empty.
 
-- ALLOWED_METHODS
+- ALLOWED\_METHODS
 
 Use to specify which HTTP methods you wish to allow. Must contain atleast one. Most of the time you only need the GET method.
 
-- SECURITY_HEADERS
+- USE\_SECURITY\_HEADERS
 
 You should not turn this off. When enabled requests are sent some additional HTTP headers in order to prevent common attacks such as clickjacking.
 
-- ALLOW_IFRAMES
+- ALLOW\_IFRAMES
 
 Enable if you want to allow other web apps to embed your website inside them. May make common attacks possible, not recommended to enable unless necessary.
 
-- APPEND_EXTRA_HEADERS
+- APPEND\_EXTRA\_HEADERS
 
-If you wish to apply the EXTRA_HEADERS to every single server response, set this bootlean to true.
+If you wish to apply the EXTRA\_HEADERS to every single server response, set this bootlean to true.
 
-- EXTRA_HEADERS
+- EXTRA\_HEADERS
 
-Additional headers you can specify which will be applied to every server response as long as APPEND_EXTRA_HEADERS is set to true.
+Additional headers you can specify which will be applied to every server response as long as APPEND\_EXTRA\_HEADERS is set to true.
 
-- EXTRA_HEADERS_SIZE
+- EXTRA\_HEADERS\_SIZE
 
-Convenience variable for specifying the size of the EXTRA_HEADERS 2-dimensional array. You may remove it and hard-code the number if you wish to.
+Convenience variable for specifying the size of the EXTRA\_HEADERS 2-dimensional array. You may remove it and hard-code the number if you wish to.
 
-- ALLOW_DIRECTORY_LISTING
+- ALLOW\_DIRECTORY\_LISTING
 
 Boolean value to specify whether you want the server to allow listing the contents of a directory whenever a user tries to access a directory and not particularly a file.
+
+- PRINT\_LICENSE\_INFO\_AT\_START
+
+Boolean value which should be set to false if you wish to not print license information for the software upon starting. Note that keeping it enabled is the least you can do to show respects to the contributors who spend their time on improving this software.
+
+- USE_TIME_HEADER
+
+The "Time" header is a special HTTP header used by the back-end in order to tell the client when the HTTP request was processed. Disable if you do not need this extra functionality.

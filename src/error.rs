@@ -1,10 +1,11 @@
-use std::{fmt, num::ParseIntError, str::Utf8Error};
+use std::{fmt, num::ParseIntError, str::Utf8Error, time::SystemTimeError};
 
 #[derive(Debug)]
 pub enum ServerError {
     ParseUtf8Error(Utf8Error),
     IOError(std::io::Error),
     ParseIntError(ParseIntError),
+    TimeError(SystemTimeError),
     UnknownError,
 }
 
@@ -31,5 +32,11 @@ impl From<ParseIntError> for ServerError {
 impl From<std::io::Error> for ServerError {
     fn from(e: std::io::Error) -> Self {
         Self::IOError(e)
+    }
+}
+
+impl From<SystemTimeError> for ServerError {
+    fn from(e: SystemTimeError) -> Self {
+        Self::TimeError(e)
     }
 }

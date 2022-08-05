@@ -37,10 +37,12 @@ mod tests {
             multithreading: false,
             num_of_threads: 1,
             http_protocol_version: HttpProtocolVersion::OneDotOne,
-            security_headers: false,
+            use_security_headers: false,
             append_extra_headers: false,
             extra_headers: vec![],
             allow_directory_listing: true,
+            print_license_info: false,
+            use_time_header: false,
         })
         .expect("test server creation failed")
     }
