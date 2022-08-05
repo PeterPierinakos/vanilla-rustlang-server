@@ -7,7 +7,7 @@ use crate::headers::Header;
 use crate::status::StatusCode;
 use std::fs::{self, File};
 use std::io::{self, Error, ErrorKind, Read};
-use std::time::{Instant, SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH};
 
 pub type ErrorResponse = (Header, StatusCode);
 pub type OkResponse = (Header, Option<String>, Option<File>);
@@ -30,10 +30,10 @@ pub fn create_file_response(
     let mut file = match file {
         Some(content) => content,
         None => match status_code {
-            400 => find_file("400.html")?,
-            404 => find_file("404.html")?,
-            500 => find_file("500.html")?,
-            405 => find_file("405.html")?,
+            400 => find_file(config.absolute_static_content_path, "400.html")?,
+            404 => find_file(config.absolute_static_content_path, "404.html")?,
+            500 => find_file(config.absolute_static_content_path, "500.html")?,
+            405 => find_file(config.absolute_static_content_path, "405.html")?,
             _ => panic!("Invalid status code passed to create_response"),
         },
     };
@@ -47,7 +47,7 @@ pub fn create_file_response(
         )));
     }
 
-    let mut response = ResponseBuilder::new();
+    let mut response = ResponseBuilder::new(config.clone());
 
     if config.append_extra_headers {
         apply_extra_headers(&mut response, &config.extra_headers);
@@ -98,7 +98,7 @@ pub fn create_dir_response(
     path_iterator: fs::ReadDir,
     config: &Configuration,
 ) -> Result<String, ServerError> {
-    let mut response = ResponseBuilder::new();
+    let mut response = ResponseBuilder::new(config.clone());
 
     if config.append_extra_headers {
         apply_extra_headers(&mut response, &config.extra_headers);

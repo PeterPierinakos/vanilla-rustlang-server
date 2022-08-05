@@ -13,8 +13,8 @@ pub fn get_file_extension(filename: &str) -> &str {
     &filename[last_dot_index + 1..]
 }
 
-pub fn find_file(filename: &str) -> Result<File, ServerError> {
-    let url = [ABSOLUTE_STATIC_CONTENT_PATH, "/", filename].concat();
+pub fn find_file(absolute_static_content_path: &str, filename: &str) -> Result<File, ServerError> {
+    let url = [absolute_static_content_path, "/", filename].concat();
 
     let file = match fs::File::open(&url) {
         Ok(file) => file,
