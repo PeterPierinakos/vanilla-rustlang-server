@@ -51,4 +51,4 @@ You may consider using this piece of software if you meet any of the following c
 
 ## Installation
 
-Read the docs to find out how to install and configure VRS (docs/ folder.)
+Installations instructions can be found [here](docs/installation.md).
