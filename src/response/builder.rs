@@ -1,18 +1,27 @@
 use crate::core::configuration::Configuration;
+use std::io;
+use super::factory::ResponseFactory;
 use crate::headers::Header;
 use crate::http::HttpProtocolVersion;
 use crate::status::StatusCode;
 use std::collections::HashMap;
 
-pub struct ResponseBuilder<'a> {
+/// Used for building an HTTP response.
+///
+/// # Examples
+///
+/// Example HTTP response:
+///
+/// HTTP/1.1 OK
+pub struct ResponseBuilder<'a, S: AsRef<str>> {
     protocol: Option<&'a str>,
     status_code: Option<StatusCode>,
-    body: Option<&'a str>,
+    body: Option<S>,
     headers: Header,
     config: Configuration<'a>,
 }
 
-impl<'a> ResponseBuilder<'a> {
+impl<'a, S: AsRef<str>> ResponseBuilder<'a, S> {
     pub fn new(config: Configuration<'a>) -> Self {
         Self {
             protocol: None,
@@ -60,7 +69,7 @@ impl<'a> ResponseBuilder<'a> {
         self.status_code = Some(status);
     }
 
-    pub fn body(&mut self, body: &'a str) {
+    pub fn body(&mut self, body: S) {
         self.body = Some(body);
     }
 
@@ -71,24 +80,36 @@ impl<'a> ResponseBuilder<'a> {
     pub fn get_headers(&self) -> Header {
         self.headers.clone()
     }
+}
 
-    pub fn construct(&self) -> String {
+impl<S: AsRef<str>> ResponseFactory for ResponseBuilder<'_, S> {
+    type ResponseContent = String;
+    type ResponseError = io::Error;
+
+    fn build(self) -> Result<Self::ResponseContent, Self::ResponseError> {
         let mut response = String::new();
 
-        let str_status = self.status_code.unwrap();
+        let status_code = match self.status_code {
+            Some(status_code) => status_code,
+            None => return Err(io::Error::new(io::ErrorKind::NotFound, "Tried to call ResponseFactory::build method before assigning required field 'status_code'."))
+        };
+        let protocol = match self.protocol {
+            Some(protocol) => protocol,
+            None => return Err(io::Error::new(io::ErrorKind::NotFound, "Tried to call ResponseFactory::build method before assigning required field 'protocol'."))
+        };
 
-        response.push_str(self.protocol.unwrap());
+        response.push_str(protocol);
         response.push(' ');
-        response.push_str(str_status.to_string().as_str());
+        response.push_str(status_code.to_string().as_str());
         response.push(' ');
 
-        response.push_str(match self.status_code.unwrap() {
+        response.push_str(match status_code {
             200 => "OK",
             400 => "Bad Request",
             404 => "Not Found",
             405 => "Method Not Allowed",
             500 => "Internal Server Error",
-            _ => panic!("Invalid status code provided"),
+            _ => return Err(io::Error::new(io::ErrorKind::InvalidInput, "Invalid status code provided. This should not occur under any circumstance in production, if this has occurred please report it on GitHub.")),
         });
 
         for (key, val) in &self.headers {
@@ -97,8 +118,8 @@ impl<'a> ResponseBuilder<'a> {
         }
 
         response.push_str("\r\n\r\n");
-        response.push_str(self.body.unwrap());
+        response.push_str(self.body.unwrap().as_ref());
 
-        response
+        Ok(response)
     }
 }
