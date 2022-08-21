@@ -1,14 +1,15 @@
 use super::configuration::Configuration;
+use std::collections::HashMap;
+use crate::response::factory::ResponseFactory;
 use super::cors::Cors;
 use super::socket::{parse_utf8, read_stream};
 use super::uri::URI;
 use crate::error::ServerError;
 use crate::file::get_file_extension;
 use crate::license::print_license_info;
-use crate::response::utils::{create_dir_response, create_file_response};
+use crate::response::{types::*, final_response::FinalResponse};
 use crate::thread::ThreadPool;
 use crate::time::generate_unixtime;
-use std::collections::HashMap;
 use std::fs::{self, File};
 use std::io::{Read, Write};
 use std::path::Path;
@@ -127,16 +128,15 @@ impl<'a> Server<'a> {
         logfile: &mut Option<File>,
         input: impl Read,
     ) -> Result<String, ServerError> {
+        let final_response = FinalResponse::special_default_builder(&self.config);
+
+        // Default to fallback response since it's the most common.
+        let final_response = final_response.response_type(ResponseType::Fallback);
+
         let (mut req_headers, buf) = match read_stream(input) {
             Ok((headers, buf)) => (headers, buf),
             Err(status) => {
-                return Ok(create_file_response(
-                    HashMap::new(),
-                    None,
-                    None,
-                    status,
-                    &self.config,
-                )?)
+                return final_response.req_headers(HashMap::new()).status_code(status).build();
             }
         };
 
@@ -180,12 +180,17 @@ HEADERS: {:?}
         let buf_utf8 = match parse_utf8(&req_headers, &buf) {
             Ok(utf8) => utf8,
             Err((headers, status)) => {
-                create_file_response(headers, None, None, status, &self.config)?
+                for (key, val) in headers {
+                    req_headers.insert(key, val);
+                }
+                return final_response.req_headers(req_headers).status_code(status).build()
             }
         };
 
+        let final_response = final_response.req_headers(req_headers);
+
         if !self.cors.method_is_allowed(&buf_utf8) {
-            return create_file_response(req_headers, None, None, 405, &self.config);
+            return final_response.status_code(405).build()
         }
 
         let mut uri = URI::new();
@@ -196,7 +201,7 @@ HEADERS: {:?}
 
         let uri_path_ref = match uri_path_ref {
             Some(path) => path,
-            None => return create_file_response(req_headers, None, None, 400, &self.config),
+            None => return final_response.status_code(400).build()
         };
 
         let absolute_path = [self.config.absolute_static_content_path, "/", uri_path_ref].concat();
@@ -205,32 +210,37 @@ HEADERS: {:?}
 
         if path.is_dir() {
             if self.config.allow_directory_listing {
-                let path_iter = match path.read_dir() {
+                let path_iterator = match path.read_dir() {
                     Ok(iter) => iter,
                     Err(_) => {
-                        return create_file_response(req_headers, None, None, 500, &self.config)
+                        return final_response.status_code(500).build()
                     }
                 };
-                return create_dir_response(req_headers, path_iter, &self.config);
+                return final_response.response_type(ResponseType::Dir(DirResponse {
+                    path_iterator,
+                })).build()
             } else {
-                return create_file_response(req_headers, None, None, 404, &self.config);
+                return final_response.status_code(404).build()
             }
         }
 
         let requested_content =
             fs::File::open([self.config.absolute_static_content_path, "/", uri_path_ref].concat());
 
-        let response = match requested_content {
+        let requested_content = match requested_content {
             Ok(file) => file,
-            Err(_err) => return create_file_response(req_headers, None, None, 404, &self.config),
+            Err(_err) => return final_response.status_code(404).build()
         };
 
-        create_file_response(
-            req_headers.clone(),
-            Some(get_file_extension(uri.get().clone().unwrap().as_str()).to_string()),
-            Some(response),
-            200,
-            &self.config,
-        )
+        final_response
+            .response_type(
+                ResponseType::File(
+                    FileResponse {
+                        file_ext: get_file_extension(uri.get().clone().unwrap().as_str()).to_string(),
+                        file: requested_content,
+                    }
+                )
+            )
+            .build()
     }
 }

@@ -29,7 +29,7 @@ impl<'a> HTMLBuilder<'a> {
         self.body.len() + self.head.len()
     }
 
-    pub fn construct(&self) -> String {
+    pub fn build(&self) -> String {
         let mut doc = String::new();
 
         doc.push_str("<!DOCTYPE html>");

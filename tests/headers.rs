@@ -9,7 +9,7 @@ mod tests {
 
     #[test]
     fn test_apply_headers_works() {
-        let mut response = ResponseBuilder::new(Configuration::test_config());
+        let mut response: ResponseBuilder<'_, &str> = ResponseBuilder::new(Configuration::test_config());
         apply_extra_headers(
             &mut response,
             &vec![["ServerHost", "VanillaRustlangServer"]],

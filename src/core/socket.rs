@@ -3,10 +3,10 @@ use std::str;
 use crate::status::StatusCode;
 use crate::{
     headers::{find_buf_headers, Header},
-    response::utils::ErrorResponse,
+    response::ErrorResponse,
 };
 
-/* Verifies that the socket has valid request data, otherwise error. */
+/* Verifies that the socket has valid request data, otherwise return the appropriate status code for the error. */
 pub fn read_stream(mut stream: impl Read) -> Result<(Header, Vec<u8>), StatusCode> {
     let mut buf = vec![0; 1024];
 
@@ -48,6 +48,7 @@ pub fn read_stream(mut stream: impl Read) -> Result<(Header, Vec<u8>), StatusCod
             Err(_) => return Err(400),
         }
     }
+
     Ok((find_buf_headers(&buf)?, buf))
 }
 
