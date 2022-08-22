@@ -6,6 +6,7 @@ pub mod headers;
 pub mod http;
 pub mod license;
 pub mod response;
+pub mod state;
 pub mod status;
 pub mod thread;
 pub mod time;

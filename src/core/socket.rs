@@ -1,13 +1,13 @@
-use std::io::Read;
-use std::str;
+use crate::headers::find_buf_headers;
+use crate::response::ErrorResponse;
 use crate::status::StatusCode;
-use crate::{
-    headers::{find_buf_headers, Header},
-    response::ErrorResponse,
-};
+use std::collections::HashMap;
+use std::io::Read;
 
 /* Verifies that the socket has valid request data, otherwise return the appropriate status code for the error. */
-pub fn read_stream(mut stream: impl Read) -> Result<(Header, Vec<u8>), StatusCode> {
+pub fn read_stream<'a>(
+    mut stream: impl Read,
+) -> Result<(HashMap<String, String>, Vec<u8>), StatusCode> {
     let mut buf = vec![0; 1024];
 
     let mut remaining_buf = buf.as_mut_slice();
@@ -52,8 +52,8 @@ pub fn read_stream(mut stream: impl Read) -> Result<(Header, Vec<u8>), StatusCod
     Ok((find_buf_headers(&buf)?, buf))
 }
 
-pub fn parse_utf8(headers: &Header, buf: &[u8]) -> Result<String, ErrorResponse> {
-    let parsed_utf8 = str::from_utf8(buf);
+pub fn parse_utf8(headers: &HashMap<String, String>, buf: &[u8]) -> Result<String, ErrorResponse> {
+    let parsed_utf8 = std::str::from_utf8(buf);
 
     match parsed_utf8 {
         Ok(string) => Ok(string.to_string()),

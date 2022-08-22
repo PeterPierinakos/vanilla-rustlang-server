@@ -17,5 +17,6 @@ pub fn main() -> Result<(), ServerError> {
         true => server.start_multithread()?,
         false => server.start_singlethread()?,
     }
+
     Ok(())
 }

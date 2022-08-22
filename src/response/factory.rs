@@ -6,4 +6,3 @@ pub trait ResponseFactory {
 
     fn build(self) -> Result<Self::ResponseContent, Self::ResponseError>;
 }
-

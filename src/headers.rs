@@ -1,11 +1,8 @@
 use crate::status::StatusCode;
 use std::collections::HashMap;
-use std::str;
 
-pub type Header = HashMap<String, String>;
-
-pub fn find_buf_headers(buf: &[u8]) -> Result<HashMap<String, String>, StatusCode> {
-    let buffer_c = match str::from_utf8(buf) {
+pub fn find_buf_headers<'a>(buf: &[u8]) -> Result<HashMap<String, String>, StatusCode> {
+    let buffer_c = match std::str::from_utf8(buf) {
         Ok(buffer_c) => buffer_c,
         Err(_) => return Err(400),
     };

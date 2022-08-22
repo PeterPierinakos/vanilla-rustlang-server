@@ -1,10 +1,9 @@
-use crate::core::configuration::Configuration;
-use std::io;
 use super::factory::ResponseFactory;
-use crate::headers::Header;
+use crate::core::configuration::Configuration;
 use crate::http::HttpProtocolVersion;
 use crate::status::StatusCode;
 use std::collections::HashMap;
+use std::io;
 
 /// Used for building an HTTP response.
 ///
@@ -13,15 +12,15 @@ use std::collections::HashMap;
 /// Example HTTP response:
 ///
 /// HTTP/1.1 OK
-pub struct ResponseBuilder<'a, S: AsRef<str>> {
-    protocol: Option<&'a str>,
-    status_code: Option<StatusCode>,
-    body: Option<S>,
-    headers: Header,
-    config: Configuration<'a>,
+pub struct ResponseBuilder<'a> {
+    pub protocol: Option<&'a str>,
+    pub status_code: Option<StatusCode>,
+    pub body: Option<String>,
+    pub headers: HashMap<String, String>,
+    pub config: Configuration<'a>,
 }
 
-impl<'a, S: AsRef<str>> ResponseBuilder<'a, S> {
+impl<'a> ResponseBuilder<'a> {
     pub fn new(config: Configuration<'a>) -> Self {
         Self {
             protocol: None,
@@ -69,20 +68,16 @@ impl<'a, S: AsRef<str>> ResponseBuilder<'a, S> {
         self.status_code = Some(status);
     }
 
-    pub fn body(&mut self, body: S) {
+    pub fn body(&mut self, body: String) {
         self.body = Some(body);
     }
 
     pub fn add_header(&mut self, key: String, val: String) {
         self.headers.insert(key, val);
     }
-
-    pub fn get_headers(&self) -> Header {
-        self.headers.clone()
-    }
 }
 
-impl<S: AsRef<str>> ResponseFactory for ResponseBuilder<'_, S> {
+impl ResponseFactory for ResponseBuilder<'_> {
     type ResponseContent = String;
     type ResponseError = io::Error;
 

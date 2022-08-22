@@ -20,6 +20,7 @@ pub struct Configuration<'a> {
     pub extra_headers: Vec<[&'a str; 2]>,
     pub allow_directory_listing: bool,
     pub print_license_info: bool,
+    pub cache_files: bool,
 }
 
 // Cloning is required by the `Server`.
@@ -44,6 +45,7 @@ impl<'a> Clone for Configuration<'a> {
             allow_directory_listing: self.allow_directory_listing,
             print_license_info: self.print_license_info,
             use_time_header: self.use_time_header,
+            cache_files: self.cache_files,
         }
     }
 }
@@ -71,6 +73,7 @@ impl<'a> Configuration<'a> {
             allow_directory_listing: ALLOW_DIRECTORY_LISTING,
             print_license_info: PRINT_LICENSE_INFO_AT_START,
             use_time_header: USE_TIME_HEADER,
+            cache_files: CACHE_FILES,
         }
     }
 
@@ -97,6 +100,7 @@ impl<'a> Configuration<'a> {
             allow_directory_listing: true,
             print_license_info: false,
             use_time_header: false,
+            cache_files: false,
         }
     }
 }

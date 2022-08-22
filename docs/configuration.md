@@ -84,6 +84,10 @@ Boolean value to specify whether you want the server to allow listing the conten
 
 Boolean value which should be set to false if you wish to not print license information for the software upon starting. Note that keeping it enabled is the least you can do to show respects to the contributors who spend their time on improving this software.
 
-- USE_TIME_HEADER
+- USE\_TIME\_HEADER
 
 The "Time" header is a special HTTP header used by the back-end in order to tell the client when the HTTP request was processed. Disable if you do not need this extra functionality.
+
+- CACHE\_FILES
+
+If enabled, the web server will cache previously requested files from the clients by storing them into the computer's memory and will display them instead of doing a filesystem operation on every request which is costly. Can double the performance on extremely large files, but in most cases it shouldn't make that much of a difference. **If enabled, once a specific file has been requested its contents will never be updated after being changed as it is stored inside RAM after the request.**
