@@ -2,6 +2,12 @@ use crate::error::ServerError;
 use std::fs::File;
 use std::{fs, io};
 
+#[derive(Clone)]
+pub struct CachedFile {
+    pub extension: String,
+    pub content: String,
+}
+
 pub fn get_file_extension(filename: &str) -> &str {
     let mut last_dot_index = 0;
     for (i, c) in filename.char_indices() {

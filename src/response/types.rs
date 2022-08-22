@@ -1,4 +1,4 @@
-use std::fs::{self, File};
+use std::fs;
 
 /// The type of the content that will be sent back to the request.
 ///
@@ -6,15 +6,15 @@ use std::fs::{self, File};
 /// `Self::Dir`: a response with the contents of a specific directory from the filesystem.
 /// `Self::Fallback`: used when you want to return a status code page back to the user, usually
 /// because of an error.
-pub enum ResponseType {
-    File(FileResponse),
+pub enum ResponseType<'a> {
+    File(FileResponse<'a>),
     Dir(DirResponse),
     Fallback,
 }
 
-pub struct FileResponse {
-    pub file_ext: String,
-    pub file: File,
+pub struct FileResponse<'a> {
+    pub file_ext: &'a str,
+    pub file_content: &'a str,
 }
 
 pub struct DirResponse {

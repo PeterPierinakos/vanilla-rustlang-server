@@ -9,12 +9,12 @@ mod tests {
 
     #[test]
     fn test_apply_headers_works() {
-        let mut response: ResponseBuilder<'_, &str> = ResponseBuilder::new(Configuration::test_config());
+        let mut response: ResponseBuilder = ResponseBuilder::new(Configuration::test_config());
         apply_extra_headers(
             &mut response,
             &vec![["ServerHost", "VanillaRustlangServer"]],
         );
-        let headers = response.get_headers();
+        let headers = response.headers;
         assert_eq!(
             headers,
             HashMap::from([("ServerHost".into(), "VanillaRustlangServer".into())])

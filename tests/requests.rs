@@ -4,6 +4,7 @@ mod tests {
     use vrs::core::configuration::Configuration;
     use vrs::core::server::Server;
     use vrs::error::ServerError;
+    use vrs::state::AppState;
 
     // This is thread local to make it possible to get around the lack of a suitable once_cell in std.
     // Note that this will leak memory in each thread that references it, and is therefore not well-suited for many tasks.
@@ -56,11 +57,12 @@ mod tests {
     fn get_index_is_ok() -> Result<(), ServerError> {
         let test_server = create_test_server();
         let req = test_server.serve_request(
-            &mut None,
+            None,
             create_test_buffer(
                 "GET / HTTP/1.1",
                 vec!["User-Agent:rust", "Origin:localhost"],
             ),
+            &mut AppState::default(),
         )?;
         assert_eq!(get_response_code(&req)?, 200);
 
@@ -70,8 +72,11 @@ mod tests {
     #[test]
     fn no_headers_is_bad_request() -> Result<(), ServerError> {
         let test_server = create_test_server();
-        let req =
-            test_server.serve_request(&mut None, create_test_buffer("GET / HTTP/1.1", vec![]))?;
+        let req = test_server.serve_request(
+            None,
+            create_test_buffer("GET / HTTP/1.1", vec![]),
+            &mut AppState::default(),
+        )?;
         assert_eq!(get_response_code(&req)?, 400);
 
         Ok(())
@@ -81,11 +86,12 @@ mod tests {
     fn nonexistent_file_is_not_found() -> Result<(), ServerError> {
         let test_server = create_test_server();
         let req = test_server.serve_request(
-            &mut None,
+            None,
             create_test_buffer(
                 "GET /notfound HTTP/1.1",
                 vec!["User-Agent:rust", "Origin:localhost"],
             ),
+            &mut AppState::default(),
         )?;
         assert_eq!(get_response_code(&req)?, 404);
 
@@ -96,11 +102,12 @@ mod tests {
     fn path_traversal_is_bad_request() -> Result<(), ServerError> {
         let test_server = create_test_server();
         let req = test_server.serve_request(
-            &mut None,
+            None,
             create_test_buffer(
                 "GET /../../../etc/passwd HTTP/1.1",
                 vec!["User-Agent:rust", "Origin:localhost"],
             ),
+            &mut AppState::default(),
         )?;
         assert_eq!(get_response_code(&req)?, 400);
 
@@ -111,11 +118,12 @@ mod tests {
     fn forbidden_method_is_not_allowed() -> Result<(), ServerError> {
         let test_server = create_test_server();
         let req = test_server.serve_request(
-            &mut None,
+            None,
             create_test_buffer(
                 "POST / HTTP/1.1",
                 vec!["User-Agent:rust", "Origin:localhost"],
             ),
+            &mut AppState::default(),
         )?;
         assert_eq!(get_response_code(&req)?, 405);
 
@@ -125,7 +133,7 @@ mod tests {
     #[test]
     fn no_crash_on_empty_body() -> Result<(), ServerError> {
         let test_server = create_test_server();
-        let res = test_server.serve_request(&mut None, Cursor::new([]))?;
+        let res = test_server.serve_request(None, Cursor::new([]), &mut AppState::default())?;
         assert_eq!(get_response_code(&res)?, 400);
 
         Ok(())
@@ -134,7 +142,7 @@ mod tests {
     #[test]
     fn no_crash_on_bad_unicode() -> Result<(), ServerError> {
         let test_server = create_test_server();
-        let res = test_server.serve_request(&mut None, Cursor::new([0xc6]))?;
+        let res = test_server.serve_request(None, Cursor::new([0xc6]), &mut AppState::default())?;
         assert_eq!(get_response_code(&res)?, 400);
 
         Ok(())
