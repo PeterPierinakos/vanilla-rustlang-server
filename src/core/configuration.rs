@@ -27,25 +27,10 @@ pub struct Configuration<'a> {
 impl<'a> Clone for Configuration<'a> {
     fn clone(&self) -> Self {
         Self {
-            absolute_static_content_path: self.absolute_static_content_path,
-            absolute_logs_path: self.absolute_logs_path,
-            save_logs: self.save_logs,
-            addr: self.addr,
-            port: self.port,
-            multithreading: self.multithreading,
-            num_of_threads: self.num_of_threads,
-            http_protocol_version: self.http_protocol_version,
             allowed_methods: self.allowed_methods.clone(),
-            allow_all_origins: self.allow_all_origins,
             allowed_origins: self.allowed_origins.clone(),
-            use_security_headers: self.use_security_headers,
-            allow_iframes: self.allow_iframes,
-            append_extra_headers: self.append_extra_headers,
             extra_headers: self.extra_headers.clone(),
-            allow_directory_listing: self.allow_directory_listing,
-            print_license_info: self.print_license_info,
-            use_time_header: self.use_time_header,
-            cache_files: self.cache_files,
+            ..*self
         }
     }
 }
