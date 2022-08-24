@@ -1,7 +1,8 @@
-pub mod builder;
+pub mod response_builder;
+pub mod json_builder;
 pub mod factory;
 pub mod final_response;
-pub mod htmlbuilder;
+pub mod html_builder;
 pub mod types;
 pub mod utils;
 

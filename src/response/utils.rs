@@ -1,4 +1,4 @@
-use super::builder::ResponseBuilder;
+use super::response_builder::ResponseBuilder;
 
 /// Used to apply the extra headers specified in the configuration file.
 ///

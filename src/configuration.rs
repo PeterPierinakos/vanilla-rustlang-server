@@ -20,6 +20,9 @@ pub const PORT: u32 = 80;
 
 pub const PRINT_LICENSE_INFO_AT_START: bool = true;
 
+pub const ALLOW_DIRECTORY_LISTING: bool = true;
+pub const FORMAT_DIRECTORY_LISTING_AS_JSON: bool = false;
+
 /* End of general server configuration */
 
 /* Start of multithreading configuration */
@@ -58,4 +61,3 @@ pub const EXTRA_HEADERS: [[&str; 2]; EXTRA_HEADERS_SIZE] = [];
 
 /* End of headers configuration */
 
-pub const ALLOW_DIRECTORY_LISTING: bool = true;
