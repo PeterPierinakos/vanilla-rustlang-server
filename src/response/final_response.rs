@@ -1,6 +1,6 @@
-use super::builder::ResponseBuilder;
+use super::response_builder::ResponseBuilder;
 use super::factory::ResponseFactory;
-use super::htmlbuilder::HTMLBuilder;
+use super::html_builder::HTMLBuilder;
 use super::types::ResponseType;
 use super::utils::apply_extra_headers;
 use crate::core::configuration::Configuration;
@@ -11,6 +11,7 @@ use std::collections::HashMap;
 use std::fs;
 use std::io::{self, Error, ErrorKind};
 use std::time::{SystemTime, UNIX_EPOCH};
+use super::json_builder::JSONBuilder;
 
 /// The "finalizer" struct for responses. Takes all the response data and turns them into a valid HTTP
 /// response string using the `FinalResponse::build` method.
@@ -121,74 +122,144 @@ impl ResponseFactory for FinalResponse<'_> {
                 if self.config.append_extra_headers {
                     apply_extra_headers(&mut res, &self.config.extra_headers);
                 }
+                match self.config.format_directory_listing_as_json {
+                    false => {
+                        // Apply CORS headers
+                        match req_headers.get("Access-Control-Allow-Origin") {
+                            Some(val) => {
+                                res.add_header("Access-Control-Allow-Origin".into(), val.to_string())
+                            }
+                            None => res.add_header(
+                                "Access-Control-Allow-Origin".to_string(),
+                                "null".to_string(),
+                            ),
+                        };
 
-                // Apply CORS headers
-                match req_headers.get("Access-Control-Allow-Origin") {
-                    Some(val) => {
-                        res.add_header("Access-Control-Allow-Origin".into(), val.to_string())
-                    }
-                    None => res.add_header(
-                        "Access-Control-Allow-Origin".to_string(),
-                        "null".to_string(),
-                    ),
-                };
+                        let mut html = HTMLBuilder::new();
 
-                let mut html = HTMLBuilder::new();
+                        html.add_to_body("<p>Directory contents:</p>");
 
-                html.add_to_body("Directory contents:");
+                        html.add_to_body("<ul>");
 
-                html.add_to_body("<ul>");
+                        let mut dirs: Vec<String> = vec![];
 
-                let mut dirs: Vec<String> = vec![];
+                        for item in res_data.path_iterator {
+                            let item = match item {
+                                Ok(item) => item,
+                                Err(_) => {
+                                    return Err(ServerError::IOError(Error::new(
+                                        ErrorKind::Other,
+                                        "Failed reading directory item",
+                                    )))
+                                }
+                            };
 
-                for item in res_data.path_iterator {
-                    let item = match item {
-                        Ok(item) => item,
-                        Err(_) => {
-                            return Err(ServerError::IOError(Error::new(
-                                ErrorKind::Other,
-                                "Failed reading directory item",
-                            )))
+                            let filename = item.file_name();
+                            let filename = match filename.to_str() {
+                                Some(str) => str,
+                                None => {
+                                    return Err(ServerError::IOError(io::Error::new(
+                                        ErrorKind::Other,
+                                        "Failed parsing requested file name from OsString to str.",
+                                    )))
+                                }
+                            };
+
+                            let decorated_filename = format!("{filename}");
+
+                            dirs.push(decorated_filename);
                         }
-                    };
 
-                    let filename = item.file_name();
-                    let filename = match filename.to_str() {
-                        Some(str) => str,
-                        None => {
-                            return Err(ServerError::IOError(io::Error::new(
-                                ErrorKind::Other,
-                                "Failed parsing requested file name from OsString to str.",
-                            )))
+                        if dirs.is_empty() {
+                            html.add_to_body("<p>The requested directory is empty.</p>");
+                            res.status_code(404);
+                            let doc = html.build();
+                            res.body(doc);
                         }
-                    };
+                        else {
+                            for dir in &dirs {
+                                html.add_to_body("<li>");
+                                html.add_to_body(dir.as_str());
+                                html.add_to_body("</li>")
+                            }
 
-                    let decorated_filename = format!("{filename}");
+                            html.add_to_body("</ul>");
 
-                    dirs.push(decorated_filename);
+                            // Apply necessary headers and security headers
+                            res.add_header("Content-Type".into(), "text/html".into());
+                            res.add_header("Content-Length".into(), html.build().len().to_string());
+
+                            if self.config.use_security_headers {
+                                res.apply_security_headers();
+                            }
+
+                            res.status_code(200);
+
+                            let doc = html.build();
+
+                            res.body(doc);
+                        }
+                    },
+                    true => {
+                        // Apply necessary headers and security headers
+                        res.add_header("Content-Type".into(), "application/json".into());
+
+                        let mut json = JSONBuilder::new();
+
+                        let mut dirs: Vec<String> = vec![];
+
+                        for item in res_data.path_iterator {
+
+                            let item = match item {
+                                Ok(item) => item,
+                                Err(_) => {
+                                    return Err(ServerError::IOError(Error::new(
+                                        ErrorKind::Other,
+                                        "Failed reading directory item",
+                                    )))
+                                }
+                            };
+
+                            let filename = item.file_name();
+                            let filename = match filename.to_str() {
+                                Some(str) => str,
+                                None => {
+                                    return Err(ServerError::IOError(io::Error::new(
+                                        ErrorKind::Other,
+                                        "Failed parsing requested file name from OsString to str.",
+                                    )))
+                                }
+                            };
+
+                            dirs.push(filename.to_string());
+                        }
+
+                        let mut i = 0;
+
+                        if dirs.is_empty() {
+                            json.add_pair("response".into(), "The requested directory is empty.".into());
+                            let final_json = json.build();
+                            res.status_code(404);
+                            res.add_header("Content-Length".into(), final_json.len().to_string());
+                            res.body(final_json);
+                        }
+                        else {
+
+                            for dir in dirs {
+                                json.add_pair(i.to_string(), dir);
+                                i += 1;
+                            }
+
+                            let final_json = json.build();
+
+                            res.add_header("Content-Length".into(), final_json.len().to_string());
+
+                            res.status_code(200);
+
+                            res.body(final_json);
+                        }
+                    },
                 }
-
-                for dir in &dirs {
-                    html.add_to_body("<li>");
-                    html.add_to_body(dir.as_str());
-                    html.add_to_body("</li>")
-                }
-
-                html.add_to_body("</ul>");
-
-                // Apply necessary headers and security headers
-                res.add_header("Content-Type".into(), "text/html".into());
-                res.add_header("Content-Length".into(), html.build().len().to_string());
-
-                if self.config.use_security_headers {
-                    res.apply_security_headers();
-                }
-
-                res.status_code(200);
-
-                let doc = html.build();
-
-                res.body(doc);
             }
             ResponseType::Fallback => {
                 let fallback_file = match fs::read_to_string([self.config.absolute_static_content_path, "/", self.status_code.to_string().as_str(), ".html"].concat()) {

@@ -8,7 +8,7 @@ There are many useful "settings" VRS provides in order to customize the web serv
 
 ### Are the default configurations safe?
 
-By default, we have set the configuration to be production-ready so that you do not have to tinker with the settings a lot. Do not be a fraid to leave the configuration as it is, it is secure enough by default. Certain configurations such as USE\_SECURITY\_HEADERS should only be turned off if you know what you are doing.
+By default, we have set the configuration to be production-ready so that you do not have to tinker with the settings a lot. Do not be a fraid to leave the configuration as it is, it is secure enough by default. It is recommended to only tinker with the necessary options. Certain configurations such as <code>USE\_SECURITY\_HEADERS</code> should only be turned off if you know what you are doing.
 
 ### Configurations in configuration.rs explained
 
@@ -18,7 +18,7 @@ You should provide this variable the absolute path (/absolute/path/to/static/) w
 
 - ABSOLUTE\_LOGS\_PATH
 
-The absolute path to which the server request logs should be saved (/absolute/path/to/logs/). Note that this can be empty if MULTITHREADING or SAVE\_LOGS is enabled because the server doesn't save logs when either are enabled.
+The absolute path to which the server request logs should be saved (/absolute/path/to/logs/). Note that this setting can be ignored if <code>MULTITHREADING</code> is enabled because the server doesn't save logs outside of singlethreaded mode..
 
 - ADDR
 
@@ -50,7 +50,7 @@ Specify whether you want to allow external web servers (outside your local netwo
 
 - ALLOWED\_ORIGINS (CORS)
 
-If you don't want to allow all origins as explained above, you may also just allow specific origins to fetch data from the server. If you want to block all origins, set ALLOW\_ALL\_ORIGINS to false and leave the ALLOWED\_ORIGINS array empty.
+If you don't want to allow all origins as explained above, you may also just allow specific origins to fetch data from the server. If you want to block all origins, set <code>ALLOW\_ALL\_ORIGINS</code> to false and leave the <code>ALLOWED\_ORIGINS</code> array empty.
 
 - ALLOWED\_METHODS
 
@@ -66,7 +66,7 @@ Enable if you want to allow other web apps to embed your website inside them. Ma
 
 - APPEND\_EXTRA\_HEADERS
 
-If you wish to apply the EXTRA\_HEADERS to every single server response, set this bootlean to true.
+If you wish to apply the <code>EXTRA\_HEADERS</code> to all of the server's responses, set this boolean to true.
 
 - EXTRA\_HEADERS
 
@@ -74,11 +74,15 @@ Additional headers you can specify which will be applied to every server respons
 
 - EXTRA\_HEADERS\_SIZE
 
-Convenience variable for specifying the size of the EXTRA\_HEADERS 2-dimensional array. You may remove it and hard-code the number if you wish to.
+Convenience variable for specifying the size of the <code>EXTRA\_HEADERS</code> 2-dimensional array. You may remove it and hard-code the number if you wish to.
 
 - ALLOW\_DIRECTORY\_LISTING
 
 Boolean value to specify whether you want the server to allow listing the contents of a directory whenever a user tries to access a directory and not particularly a file.
+
+- FORMAT\_DIRECTORY\_LISTING\_AS\_JSON
+
+Boolean value to specify whether the returned directory's contents should be JSON. If it is set to false, it will return HTML. Can be ignored if <code>ALLOW\_DIRECTORY\_LISTING</code> is set to false.
 
 - PRINT\_LICENSE\_INFO\_AT\_START
 
