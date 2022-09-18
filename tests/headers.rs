@@ -4,7 +4,7 @@
 mod tests {
     use std::collections::HashMap;
     use vrs::core::configuration::Configuration;
-    use vrs::response::builder::ResponseBuilder;
+    use vrs::response::response_builder::ResponseBuilder;
     use vrs::response::utils::apply_extra_headers;
 
     #[test]
