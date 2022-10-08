@@ -1,6 +1,7 @@
-use super::response_builder::ResponseBuilder;
 use super::factory::ResponseFactory;
 use super::html_builder::HTMLBuilder;
+use super::json_builder::JSONBuilder;
+use super::response_builder::ResponseBuilder;
 use super::types::ResponseType;
 use super::utils::apply_extra_headers;
 use crate::core::configuration::Configuration;
@@ -11,7 +12,6 @@ use std::collections::HashMap;
 use std::fs;
 use std::io::{self, Error, ErrorKind};
 use std::time::{SystemTime, UNIX_EPOCH};
-use super::json_builder::JSONBuilder;
 
 /// The "finalizer" struct for responses. Takes all the response data and turns them into a valid HTTP
 /// response string using the `FinalResponse::build` method.
@@ -126,9 +126,8 @@ impl ResponseFactory for FinalResponse<'_> {
                     false => {
                         // Apply CORS headers
                         match req_headers.get("Access-Control-Allow-Origin") {
-                            Some(val) => {
-                                res.add_header("Access-Control-Allow-Origin".into(), val.to_string())
-                            }
+                            Some(val) => res
+                                .add_header("Access-Control-Allow-Origin".into(), val.to_string()),
                             None => res.add_header(
                                 "Access-Control-Allow-Origin".to_string(),
                                 "null".to_string(),
@@ -155,15 +154,14 @@ impl ResponseFactory for FinalResponse<'_> {
                             };
 
                             let filename = item.file_name();
-                            let filename = match filename.to_str() {
-                                Some(str) => str,
-                                None => {
-                                    return Err(ServerError::IOError(io::Error::new(
+                            let filename =
+                                match filename.to_str() {
+                                    Some(str) => str,
+                                    None => return Err(ServerError::IOError(io::Error::new(
                                         ErrorKind::Other,
                                         "Failed parsing requested file name from OsString to str.",
-                                    )))
-                                }
-                            };
+                                    ))),
+                                };
 
                             let decorated_filename = format!("{filename}");
 
@@ -175,8 +173,7 @@ impl ResponseFactory for FinalResponse<'_> {
                             res.status_code(404);
                             let doc = html.build();
                             res.body(doc);
-                        }
-                        else {
+                        } else {
                             for dir in &dirs {
                                 html.add_to_body("<li>");
                                 html.add_to_body(dir.as_str());
@@ -199,7 +196,7 @@ impl ResponseFactory for FinalResponse<'_> {
 
                             res.body(doc);
                         }
-                    },
+                    }
                     true => {
                         // Apply necessary headers and security headers
                         res.add_header("Content-Type".into(), "application/json".into());
@@ -209,7 +206,6 @@ impl ResponseFactory for FinalResponse<'_> {
                         let mut dirs: Vec<String> = vec![];
 
                         for item in res_data.path_iterator {
-
                             let item = match item {
                                 Ok(item) => item,
                                 Err(_) => {
@@ -221,15 +217,14 @@ impl ResponseFactory for FinalResponse<'_> {
                             };
 
                             let filename = item.file_name();
-                            let filename = match filename.to_str() {
-                                Some(str) => str,
-                                None => {
-                                    return Err(ServerError::IOError(io::Error::new(
+                            let filename =
+                                match filename.to_str() {
+                                    Some(str) => str,
+                                    None => return Err(ServerError::IOError(io::Error::new(
                                         ErrorKind::Other,
                                         "Failed parsing requested file name from OsString to str.",
-                                    )))
-                                }
-                            };
+                                    ))),
+                                };
 
                             dirs.push(filename.to_string());
                         }
@@ -237,14 +232,15 @@ impl ResponseFactory for FinalResponse<'_> {
                         let mut i = 0;
 
                         if dirs.is_empty() {
-                            json.add_pair("response".into(), "The requested directory is empty.".into());
+                            json.add_pair(
+                                "response".into(),
+                                "The requested directory is empty.".into(),
+                            );
                             let final_json = json.build();
                             res.status_code(404);
                             res.add_header("Content-Length".into(), final_json.len().to_string());
                             res.body(final_json);
-                        }
-                        else {
-
+                        } else {
                             for dir in dirs {
                                 json.add_pair(i.to_string(), dir);
                                 i += 1;
@@ -258,7 +254,7 @@ impl ResponseFactory for FinalResponse<'_> {
 
                             res.body(final_json);
                         }
-                    },
+                    }
                 }
             }
             ResponseType::Fallback => {

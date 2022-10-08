@@ -60,4 +60,3 @@ pub const EXTRA_HEADERS_SIZE: usize = 0;
 pub const EXTRA_HEADERS: [[&str; 2]; EXTRA_HEADERS_SIZE] = [];
 
 /* End of headers configuration */
-

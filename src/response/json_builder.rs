@@ -6,9 +6,7 @@ impl JSONBuilder {
     pub fn new() -> Self {
         let json = '{'.to_string();
 
-        Self {
-            json,
-        }
+        Self { json }
     }
 
     pub fn add_pair(&mut self, key: String, val: String) {
@@ -21,7 +19,7 @@ impl JSONBuilder {
     }
 
     pub fn build(&mut self) -> String {
-        self.json.push('}'); 
+        self.json.push('}');
         self.json.clone()
     }
 }
