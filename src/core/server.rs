@@ -1,7 +1,6 @@
 use super::configuration::Configuration;
 use super::socket::{parse_utf8, read_stream};
 use super::uri::URI;
-use crate::configuration;
 use crate::error::ServerError;
 use crate::file::{get_file_extension, CachedFile};
 use crate::license::print_license_info;
@@ -20,16 +19,12 @@ use std::{fs::OpenOptions, net::TcpListener};
 use crate::compile_if_eq;
 
 /// Function executed during server initialization for initial server tasks such as printing the software license's information.
-///
-/// Runs in a separate thread to not interfere with anything done in the main thread.
-fn do_initial_tasks(pool: &ThreadPool) {
-    pool.execute(|| {
-        compile_if_eq!(
-            configuration::PRINT_LICENSE_INFO_AT_START,
-            true,
-            print_license_info
-        );
-    });
+fn do_initial_tasks(config: &Configuration) {
+    compile_if_eq!(
+        config.print_license_info_at_start,
+        true,
+        print_license_info
+    );
 }
 
 /// The main initializer for the server used by the single-threaded and multi-threaded initializers.
@@ -43,7 +38,7 @@ fn server_initializer<
 ) -> Result<(), ServerError> {
     let pool = ThreadPool::new(config.num_of_threads)?;
 
-    do_initial_tasks(&pool);
+    do_initial_tasks(config);
 
     let listener =
         TcpListener::bind([config.addr, ":", config.port.to_string().as_str()].concat())?;

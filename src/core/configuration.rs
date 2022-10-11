@@ -22,6 +22,7 @@ pub struct Configuration<'a> {
     pub allow_directory_listing: bool,
     pub cache_files: bool,
     pub format_directory_listing_as_json: bool,
+    pub print_license_info_at_start: bool,
 }
 
 // Cloning is required by the `Server`.
@@ -60,6 +61,7 @@ impl<'a> Configuration<'a> {
             use_time_header: USE_TIME_HEADER,
             cache_files: CACHE_FILES,
             format_directory_listing_as_json: FORMAT_DIRECTORY_LISTING_AS_JSON,
+            print_license_info_at_start: PRINT_LICENSE_INFO_AT_START,
         }
     }
 
@@ -87,6 +89,7 @@ impl<'a> Configuration<'a> {
             use_time_header: false,
             cache_files: false,
             format_directory_listing_as_json: false,
+            print_license_info_at_start: false,
         }
     }
 }
