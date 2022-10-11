@@ -20,7 +20,6 @@ pub struct Configuration<'a> {
     pub append_extra_headers: bool,
     pub extra_headers: Vec<[&'a str; 2]>,
     pub allow_directory_listing: bool,
-    pub print_license_info: bool,
     pub cache_files: bool,
     pub format_directory_listing_as_json: bool,
 }
@@ -58,7 +57,6 @@ impl<'a> Configuration<'a> {
             append_extra_headers: APPEND_EXTRA_HEADERS,
             extra_headers: EXTRA_HEADERS.into(),
             allow_directory_listing: ALLOW_DIRECTORY_LISTING,
-            print_license_info: PRINT_LICENSE_INFO_AT_START,
             use_time_header: USE_TIME_HEADER,
             cache_files: CACHE_FILES,
             format_directory_listing_as_json: FORMAT_DIRECTORY_LISTING_AS_JSON,
@@ -86,7 +84,6 @@ impl<'a> Configuration<'a> {
             append_extra_headers: false,
             extra_headers: vec![],
             allow_directory_listing: true,
-            print_license_info: false,
             use_time_header: false,
             cache_files: false,
             format_directory_listing_as_json: false,

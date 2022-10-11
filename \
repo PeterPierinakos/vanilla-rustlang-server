@@ -1,7 +1,7 @@
+use crate::configuration;
 use super::configuration::Configuration;
 use super::socket::{parse_utf8, read_stream};
 use super::uri::URI;
-use crate::configuration;
 use crate::error::ServerError;
 use crate::file::{get_file_extension, CachedFile};
 use crate::license::print_license_info;
@@ -17,134 +17,129 @@ use std::io::{Read, Write};
 use std::path::Path;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::{fs::OpenOptions, net::TcpListener};
-use crate::compile_if_eq;
 
-/// Function executed during server initialization for initial server tasks such as printing the software license's information.
-///
-/// Runs in a separate thread to not interfere with anything done in the main thread.
-fn do_initial_tasks(pool: &ThreadPool) {
+macro_rules! compile_if_eq {
+    ($var:expr,$expected:expr,exec:expr) => {
+        match $var {
+            $expected => $exec(),
+            _ => (),
+        }
+    }
+}
+
+/// Function executed during server initialization for misc server tasks.
+pub fn init_tasks(pool: &mut ThreadPool) {
     pool.execute(|| {
-        compile_if_eq!(
-            configuration::PRINT_LICENSE_INFO_AT_START,
-            true,
-            print_license_info
-        );
+        compile_if_eq!(configuration::PRINT_LICENSE_INFO_AT_START, true, "A");
+        print_license_info();
     });
 }
 
-/// The main initializer for the server used by the single-threaded and multi-threaded initializers.
-///
-/// The `init` closure additionally takes a `ThreadPool` which can be disregarded if the server isn't planning to use multiple threads.
-fn server_initializer<
-    F: FnOnce(ThreadPool, TcpListener, AppState) -> Result<(), ServerError>,
->(
-    config: &Configuration,
-    init: F,
-) -> Result<(), ServerError> {
-    let pool = ThreadPool::new(config.num_of_threads)?;
-
-    do_initial_tasks(&pool);
+pub fn start_multithread(config: Configuration) -> Result<(), ServerError> {
+    let unix_ts = generate_unixtime()?;
 
     let listener =
         TcpListener::bind([config.addr, ":", config.port.to_string().as_str()].concat())?;
 
-    let state = AppState::default();
+    if !config.use_security_headers {
+        println!("Production note: security headers are currently turned off, keep it enabled in production!")
+    }
 
-    init(pool, listener, state)
-}
+    let pool = ThreadPool::new(config.num_of_threads)?;
 
-pub fn start_multithread(config: Configuration) -> Result<(), ServerError> {
-    server_initializer(&config, |pool, listener, mut state| {
-        if !config.use_security_headers {
-            println!("Production note: security headers are currently turned off, keep it enabled in production!")
-        }
+    let mut state = AppState::default();
 
-        if config.cache_files {
-            state.cached_files = Some(HashMap::new());
-        }
+    if config.cache_files {
+        state.cached_files = Some(HashMap::new());
+    }
 
-        let (cache_tx, cache_rx): (
-            Sender<HashMap<String, CachedFile>>,
-            Receiver<HashMap<String, CachedFile>>,
-        ) = mpsc::channel();
+    let (cache_tx, cache_rx): (
+        Sender<HashMap<String, CachedFile>>,
+        Receiver<HashMap<String, CachedFile>>,
+    ) = mpsc::channel();
 
-        for stream in listener.incoming() {
-            let state_ref = state.clone();
-            let cache_tx_ref = cache_tx.clone();
+    for stream in listener.incoming() {
+        let state_ref = state.clone();
+        let cache_tx_ref = cache_tx.clone();
 
-            pool.execute(|| {
-                let config = Configuration::test_config();
+        pool.execute(|| {
+            let config = Configuration::test_config();
 
-                let mut stream = stream.unwrap();
-                let mut state_ref = state_ref;
-                let tx = cache_tx_ref;
+            let mut stream = stream.unwrap();
+            let mut state_ref = state_ref;
+            let tx = cache_tx_ref;
 
-                let response = serve_request(&config, None, &mut stream, &mut state_ref);
+            let response = serve_request(&config, None, &mut stream, &mut state_ref);
 
-                // Note: `.unwrap()` will only make one of the threads panic in multithreaded mode, so unwrapping instead of returning the error is fine.
-                stream.write_all(&response.unwrap().as_bytes()).unwrap();
-                stream.flush().unwrap();
-
-                if config.cache_files {
-                    tx.send(state_ref.cached_files.expect(
-                        "'cached_files' is None even though 'cache_files' boolean is set to true.",
-                    ))
-                    .expect("Failed transmitting app's state.");
-                }
-            });
+            // Note: `.unwrap()` will only make one of the threads panic in multithreaded mode, so unwrapping instead of returning the error is fine.
+            stream.write_all(&response.unwrap().as_bytes()).unwrap();
+            stream.flush().unwrap();
 
             if config.cache_files {
-                state.cached_files = Some(cache_rx.recv().unwrap());
+                tx.send(state_ref.cached_files.expect(
+                    "'cached_files' is None even though 'cache_files' boolean is set to true.",
+                ))
+                .expect("Failed transmitting app's state.");
             }
-        }
+        });
 
-        Ok(())
-    })
+        if config.cache_files {
+            state.cached_files = Some(cache_rx.recv().unwrap());
+        }
+    }
+
+    Ok(())
 }
 
 pub fn start_singlethread(config: Configuration) -> Result<(), ServerError> {
-    server_initializer(&config, |_, listener, mut state| {
-        let unix_ts = generate_unixtime()?;
+    if config.print_license_info {
+        print_license_info();
+    }
 
-        /* Create the log file and return error if it fails creating or opening existing one */
-        let mut logfile =
-            if config.save_logs {
-                let result =
-                    Some(OpenOptions::new().append(true).create(true).open(
-                        [config.absolute_logs_path, "/", unix_ts.to_string().as_str()].concat(),
-                    ));
-                match result.expect("Something went wrong whilst unwrapping the logfile.") {
-                    Ok(file) => Some(file),
-                    Err(_) => {
-                        println!(
-                            "Warning: Failed creating or opening logfile. Logs will not be saved."
-                        );
-                        None
-                    }
-                }
-            } else {
+    let unix_ts = generate_unixtime()?;
+
+    let listener =
+        TcpListener::bind([config.addr, ":", config.port.to_string().as_str()].concat())?;
+
+    /* Create the log file and return error if it fails creating or opening existing one */
+    let mut logfile = if config.save_logs {
+        let result = Some(
+            OpenOptions::new()
+                .append(true)
+                .create(true)
+                .open([config.absolute_logs_path, "/", unix_ts.to_string().as_str()].concat()),
+        );
+        match result.expect("Something went wrong whilst unwrapping the logfile.") {
+            Ok(file) => Some(file),
+            Err(_) => {
+                println!("Warning: Failed creating or opening logfile. Logs will not be saved.");
                 None
-            };
-
-        if !config.use_security_headers {
-            println!("Production note: security headers are currently turned off, keep it enabled in production!");
+            }
         }
+    } else {
+        None
+    };
 
-        if config.cache_files {
-            state.cached_files = Some(HashMap::new());
-        }
+    if !config.use_security_headers {
+        println!("Production note: security headers are currently turned off, keep it enabled in production!");
+    }
 
-        for stream in listener.incoming() {
-            let mut stream = stream?; /* Note that stream is a result. */
+    let mut state = AppState::default();
 
-            let response = serve_request(&config, logfile.as_mut(), &stream, &mut state)?;
+    if config.cache_files {
+        state.cached_files = Some(HashMap::new());
+    }
 
-            stream.write_all(&response.as_bytes())?;
-            stream.flush()?;
-        }
+    for stream in listener.incoming() {
+        let mut stream = stream?; /* Note that stream is a result. */
 
-        Ok(())
-    })
+        let response = serve_request(&config, logfile.as_mut(), &stream, &mut state)?;
+
+        stream.write_all(&response.as_bytes())?;
+        stream.flush()?;
+    }
+
+    Ok(())
 }
 
 pub fn serve_request(
