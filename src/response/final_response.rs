@@ -264,7 +264,7 @@ impl ResponseFactory for FinalResponse<'_> {
             ResponseType::Fallback => {
                 let fallback_file = match fs::read_to_string([self.config.absolute_static_content_path, "/", self.status_code.to_string().as_str(), ".html"].concat()) {
                     Ok(file) => file,
-                    Err(_) => return Err(ServerError::from(io::Error::new(io::ErrorKind::NotFound, format!("Fallback file for {} status code page doesn't exist. Have you run the setup.sh script?", self.status_code))))
+                    Err(_) => return Err(ServerError::from(io::Error::new(io::ErrorKind::NotFound, format!("Fallback file for {} status code page doesn't exist. Have you run 'make migrate'?", self.status_code))))
                 };
 
                 res.add_header("Content-Type".into(), "text/html".into());
