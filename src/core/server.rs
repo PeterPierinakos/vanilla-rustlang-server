@@ -3,7 +3,6 @@ use super::socket::{parse_utf8, read_stream};
 use super::uri::URI;
 use crate::error::ServerError;
 use crate::file::{get_file_extension, CachedFile};
-use crate::license::print_license_info;
 use crate::response::factory::ResponseFactory;
 use crate::response::{final_response::FinalResponse, types::*};
 use crate::state::AppState;
@@ -23,7 +22,7 @@ fn do_initial_tasks(config: &Configuration) {
     compile_if_eq!(
         config.print_license_info_at_start,
         true,
-        print_license_info
+        { crate::license_info!(); }
     );
 }
 

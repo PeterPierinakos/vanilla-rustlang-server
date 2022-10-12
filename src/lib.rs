@@ -4,7 +4,6 @@ pub mod error;
 pub mod file;
 pub mod headers;
 pub mod http;
-pub mod license;
 pub mod response;
 pub mod state;
 pub mod status;
