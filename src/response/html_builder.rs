@@ -12,7 +12,7 @@ impl<'a> HTMLBuilder<'a> {
         ];
 
         Self {
-            head: head,
+            head,
             body: vec![],
         }
     }

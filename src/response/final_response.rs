@@ -1,8 +1,7 @@
 use super::html_builder::HTMLBuilder;
-use super::json_builder::JSONBuilder;
 use super::response_builder::ResponseBuilder;
 use super::types::ResponseType;
-use super::utils::apply_extra_headers;
+use super::utils::*;
 use crate::core::configuration::Configuration;
 use crate::error::ServerError;
 use crate::file::*;
@@ -186,8 +185,6 @@ impl<'a> FinalResponse<'a> {
                         // Apply necessary headers and security headers
                         res.add_header("Content-Type".into(), "application/json".into());
 
-                        let mut json = JSONBuilder::new();
-
                         let mut dirs: Vec<String> = vec![];
 
                         for item in res_data.path_iterator {
@@ -213,31 +210,58 @@ impl<'a> FinalResponse<'a> {
 
                             dirs.push(filename.to_string());
                         }
+                        
+                        use std::fmt::Display;
 
-                        let mut i = 0;
+                        fn map_as_json_str<T1: Display, T2: Display>(mp: HashMap<T1, T2>) -> String {
+                            let mut json = '{'.to_string();
 
-                        if dirs.is_empty() {
-                            json.add_pair(
-                                "response".into(),
-                                "The requested directory is empty.".into(),
-                            );
-                            let final_json = json.build();
-                            res.status_code(404);
-                            res.add_header("Content-Length".into(), final_json.len().to_string());
-                            res.body(final_json);
-                        } else {
-                            for dir in dirs {
-                                json.add_pair(i.to_string(), dir);
-                                i += 1;
+                            for (key, val) in mp {
+                                json.push_str(&format!("\"{key}\": \"{val}\","));
                             }
 
-                            let final_json = json.build();
+                            if json.len() > 1 {
+                                json.pop();
+                            }
 
-                            res.add_header("Content-Length".into(), final_json.len().to_string());
+                            json.push('}');
+
+                            json
+                        }
+
+                        fn vec_as_json_str<T: Display>(vec: Vec<T>) -> String {
+                            let mut json = '['.to_string();
+
+                            for item in vec {
+                                json.push_str(&format!("\"{item}\","));
+                            }
+
+                            if json.len() > 1 {
+                                json.pop();
+                            }
+
+                            json.push(']');
+
+                            json
+                        }
+
+                        if dirs.is_empty() {
+                            let json = HashMap::from([(
+                                "response",
+                                "The requested directory is empty.",
+                            )]);
+                            let json = map_as_json_str(json);
+                            res.status_code(404);
+                            res.add_header("Content-Length".into(), json.len().to_string());
+                            res.body(json);
+                        } else {
+                            let json = vec_as_json_str(dirs);
+
+                            res.add_header("Content-Length".into(), json.len().to_string());
 
                             res.status_code(200);
 
-                            res.body(final_json);
+                            res.body(json);
                         }
                     }
                 }

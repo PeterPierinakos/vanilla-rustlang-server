@@ -1,4 +1,5 @@
 use super::response_builder::ResponseBuilder;
+use std::{collections::HashMap, fmt};
 
 /// Used to apply the extra headers specified in the configuration file.
 ///
