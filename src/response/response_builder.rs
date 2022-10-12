@@ -1,4 +1,3 @@
-use super::factory::ResponseFactory;
 use crate::core::configuration::Configuration;
 use crate::http::HttpProtocolVersion;
 use crate::status::StatusCode;
@@ -27,7 +26,7 @@ impl<'a> ResponseBuilder<'a> {
             status_code: None,
             body: None,
             headers: HashMap::new(),
-            config: config,
+            config,
         }
     }
 
@@ -39,15 +38,14 @@ impl<'a> ResponseBuilder<'a> {
         }
     }
 
-    /* Headers to prevent common attacks */
-    /*
-
-    List of security headers included:
-    * X-Content-Type-Options
-    * X-Frame-Options
-    * Cross-Origin-Resource-Policy
-
-    */
+    // Headers to prevent common attacks */
+    /// List of security headers included:
+    ///
+    /// - `X-Content-Type-Options`
+    ///
+    /// - `X-Frame-Options`
+    ///
+    /// - `Cross-Origin-Resource-Policy`
     pub fn apply_security_headers(&mut self) {
         /* Prevent malicious HTML */
         self.add_header("X-Content-Type-Options".to_string(), "nosniff".to_string());
@@ -75,13 +73,8 @@ impl<'a> ResponseBuilder<'a> {
     pub fn add_header(&mut self, key: String, val: String) {
         self.headers.insert(key, val);
     }
-}
 
-impl ResponseFactory for ResponseBuilder<'_> {
-    type ResponseContent = String;
-    type ResponseError = io::Error;
-
-    fn build(self) -> Result<Self::ResponseContent, Self::ResponseError> {
+    pub fn build(self) -> Result<String, io::Error> {
         let mut response = String::new();
 
         let status_code = match self.status_code {

@@ -1,4 +1,3 @@
-use super::factory::ResponseFactory;
 use super::html_builder::HTMLBuilder;
 use super::json_builder::JSONBuilder;
 use super::response_builder::ResponseBuilder;
@@ -26,15 +25,6 @@ pub struct FinalResponse<'a> {
 
 impl<'a> FinalResponse<'a> {
     /// Special default function reserved to be used by the serve_request core server method.
-    pub fn special_default_builder(config: &'a Configuration) -> Self {
-        Self {
-            status_code: 200,
-            req_headers: None,
-            response_type: None,
-            config,
-        }
-    }
-
     pub fn status_code(self, status_code: StatusCode) -> Self {
         Self {
             status_code,
@@ -55,13 +45,8 @@ impl<'a> FinalResponse<'a> {
             ..self
         }
     }
-}
 
-impl ResponseFactory for FinalResponse<'_> {
-    type ResponseContent = String;
-    type ResponseError = ServerError;
-
-    fn build(self) -> Result<Self::ResponseContent, Self::ResponseError> {
+    pub fn build(self) -> Result<String, ServerError> {
         let mut res = ResponseBuilder::new(self.config.clone());
 
         let response_type = match self.response_type {

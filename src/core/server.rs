@@ -3,7 +3,6 @@ use super::socket::{parse_utf8, read_stream};
 use super::uri::URI;
 use crate::error::ServerError;
 use crate::file::{get_file_extension, CachedFile};
-use crate::response::factory::ResponseFactory;
 use crate::response::{final_response::FinalResponse, types::*};
 use crate::state::AppState;
 use crate::thread::ThreadPool;
@@ -147,7 +146,12 @@ pub fn serve_request(
     input: impl Read,
     state: &mut AppState,
 ) -> Result<String, ServerError> {
-    let final_response = FinalResponse::special_default_builder(&config);
+    let final_response = FinalResponse {
+        status_code: 200,
+        req_headers: None,
+        response_type: None,
+        config,
+    };
 
     // Default to fallback response since it's the most common.
     let final_response = final_response.response_type(ResponseType::Fallback);
