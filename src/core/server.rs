@@ -1,6 +1,7 @@
 use super::configuration::Configuration;
 use super::socket::{parse_utf8, read_stream};
 use super::uri::URI;
+use crate::compile_if_eq;
 use crate::error::ServerError;
 use crate::file::{get_file_extension, CachedFile};
 use crate::response::{final_response::FinalResponse, types::*};
@@ -14,23 +15,18 @@ use std::io::{Read, Write};
 use std::path::Path;
 use std::sync::mpsc::{self, Receiver, Sender};
 use std::{fs::OpenOptions, net::TcpListener};
-use crate::compile_if_eq;
 
 /// Function executed during server initialization for initial server tasks such as printing the software license's information.
 fn do_initial_tasks(config: &Configuration) {
-    compile_if_eq!(
-        config.print_license_info_at_start,
-        true,
-        { crate::license_info!(); }
-    );
+    compile_if_eq!(config.print_license_info_at_start, true, {
+        crate::license_info!();
+    });
 }
 
 /// The main initializer for the server used by the single-threaded and multi-threaded initializers.
 ///
 /// The `init` closure additionally takes a `ThreadPool` which can be disregarded if the server isn't planning to use multiple threads.
-fn server_initializer<
-    F: FnOnce(ThreadPool, TcpListener, AppState) -> Result<(), ServerError>,
->(
+fn server_initializer<F: FnOnce(ThreadPool, TcpListener, AppState) -> Result<(), ServerError>>(
     config: &Configuration,
     init: F,
 ) -> Result<(), ServerError> {

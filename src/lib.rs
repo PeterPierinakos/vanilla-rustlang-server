@@ -1,3 +1,4 @@
+pub mod codegen_utils;
 pub mod configuration;
 pub mod core;
 pub mod error;
@@ -9,4 +10,3 @@ pub mod state;
 pub mod status;
 pub mod thread;
 pub mod time;
-pub mod codegen_utils;

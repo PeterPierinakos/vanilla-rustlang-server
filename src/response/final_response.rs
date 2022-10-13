@@ -1,4 +1,3 @@
-use super::html_builder::HTMLBuilder;
 use super::response_builder::ResponseBuilder;
 use super::types::ResponseType;
 use super::utils::*;
@@ -118,11 +117,14 @@ impl<'a> FinalResponse<'a> {
                             ),
                         };
 
-                        let mut html = HTMLBuilder::new();
+                        let mut head = vec![];
 
-                        html.add_to_body("<p>Directory contents:</p>");
+                        head.push("<meta charset=\"utf-8\">");
 
-                        html.add_to_body("<ul>");
+                        let mut body = vec![];
+
+                        body.push("<p>Directory contents:</p>");
+                        body.push("<ul>");
 
                         let mut dirs: Vec<String> = vec![];
 
@@ -153,30 +155,29 @@ impl<'a> FinalResponse<'a> {
                         }
 
                         if dirs.is_empty() {
-                            html.add_to_body("<p>The requested directory is empty.</p>");
+                            body.push("<p>The requested directory is empty.</p>");
                             res.status_code(404);
-                            let doc = html.build();
-                            res.body(doc);
+                            res.body(build_html(head, body));
                         } else {
                             for dir in &dirs {
-                                html.add_to_body("<li>");
-                                html.add_to_body(dir.as_str());
-                                html.add_to_body("</li>")
+                                body.push("<li>");
+                                body.push(dir.as_str());
+                                body.push("</li>")
                             }
 
-                            html.add_to_body("</ul>");
+                            body.push("</ul>");
+
+                            let doc = build_html(head, body);
 
                             // Apply necessary headers and security headers
                             res.add_header("Content-Type".into(), "text/html".into());
-                            res.add_header("Content-Length".into(), html.build().len().to_string());
+                            res.add_header("Content-Length".into(), doc.len().to_string());
 
                             if self.config.use_security_headers {
                                 res.apply_security_headers();
                             }
 
                             res.status_code(200);
-
-                            let doc = html.build();
 
                             res.body(doc);
                         }
@@ -210,46 +211,10 @@ impl<'a> FinalResponse<'a> {
 
                             dirs.push(filename.to_string());
                         }
-                        
-                        use std::fmt::Display;
-
-                        fn map_as_json_str<T1: Display, T2: Display>(mp: HashMap<T1, T2>) -> String {
-                            let mut json = '{'.to_string();
-
-                            for (key, val) in mp {
-                                json.push_str(&format!("\"{key}\": \"{val}\","));
-                            }
-
-                            if json.len() > 1 {
-                                json.pop();
-                            }
-
-                            json.push('}');
-
-                            json
-                        }
-
-                        fn vec_as_json_str<T: Display>(vec: Vec<T>) -> String {
-                            let mut json = '['.to_string();
-
-                            for item in vec {
-                                json.push_str(&format!("\"{item}\","));
-                            }
-
-                            if json.len() > 1 {
-                                json.pop();
-                            }
-
-                            json.push(']');
-
-                            json
-                        }
 
                         if dirs.is_empty() {
-                            let json = HashMap::from([(
-                                "response",
-                                "The requested directory is empty.",
-                            )]);
+                            let json =
+                                HashMap::from([("response", "The requested directory is empty.")]);
                             let json = map_as_json_str(json);
                             res.status_code(404);
                             res.add_header("Content-Length".into(), json.len().to_string());

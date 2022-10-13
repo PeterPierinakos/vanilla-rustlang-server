@@ -1,5 +1,4 @@
 pub mod final_response;
-pub mod html_builder;
 pub mod response_builder;
 pub mod types;
 pub mod utils;
