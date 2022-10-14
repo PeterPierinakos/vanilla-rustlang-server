@@ -1,8 +1,9 @@
 #[cfg(test)]
 mod tests {
     use std::io::Cursor;
+    use std::io::Read;
     use vrs::core::configuration::Configuration;
-    use vrs::core::server::Server;
+    use vrs::core::server;
     use vrs::error::ServerError;
     use vrs::state::AppState;
 
@@ -19,8 +20,13 @@ mod tests {
         );
     }
 
-    fn create_test_server() -> Server<'static> {
-        Server::new(Configuration::test_config()).expect("test server creation failed")
+    fn test_serve_request(input: impl Read) -> Result<String, ServerError> {
+        server::serve_request(
+            &Configuration::test_config(),
+            None,
+            input,
+            &mut AppState::default(),
+        )
     }
 
     /// Create a request buffer for testing the server's core, with the arguments being stringly typed.
@@ -55,85 +61,59 @@ mod tests {
 
     #[test]
     fn get_index_is_ok() -> Result<(), ServerError> {
-        let test_server = create_test_server();
-        let req = test_server.serve_request(
-            None,
-            create_test_buffer(
-                "GET / HTTP/1.1",
-                vec!["User-Agent:rust", "Origin:localhost"],
-            ),
-            &mut AppState::default(),
-        )?;
-        assert_eq!(get_response_code(&req)?, 200);
+        let res = test_serve_request(create_test_buffer(
+            "GET / HTTP/1.1",
+            vec!["User-Agent:rust", "Origin:localhost"],
+        ))?;
+        assert_eq!(get_response_code(&res)?, 200);
 
         Ok(())
     }
 
     #[test]
     fn no_headers_is_bad_request() -> Result<(), ServerError> {
-        let test_server = create_test_server();
-        let req = test_server.serve_request(
-            None,
-            create_test_buffer("GET / HTTP/1.1", vec![]),
-            &mut AppState::default(),
-        )?;
-        assert_eq!(get_response_code(&req)?, 400);
+        let res = test_serve_request(create_test_buffer("GET / HTTP/1.1", vec![]))?;
+        assert_eq!(get_response_code(&res)?, 400);
 
         Ok(())
     }
 
     #[test]
     fn nonexistent_file_is_not_found() -> Result<(), ServerError> {
-        let test_server = create_test_server();
-        let req = test_server.serve_request(
-            None,
-            create_test_buffer(
-                "GET /notfound HTTP/1.1",
-                vec!["User-Agent:rust", "Origin:localhost"],
-            ),
-            &mut AppState::default(),
-        )?;
-        assert_eq!(get_response_code(&req)?, 404);
+        let res = test_serve_request(create_test_buffer(
+            "GET /notfound HTTP/1.1",
+            vec!["User-Agent:rust", "Origin:localhost"],
+        ))?;
+        assert_eq!(get_response_code(&res)?, 404);
 
         Ok(())
     }
 
     #[test]
     fn path_traversal_is_bad_request() -> Result<(), ServerError> {
-        let test_server = create_test_server();
-        let req = test_server.serve_request(
-            None,
-            create_test_buffer(
-                "GET /../../../etc/passwd HTTP/1.1",
-                vec!["User-Agent:rust", "Origin:localhost"],
-            ),
-            &mut AppState::default(),
-        )?;
-        assert_eq!(get_response_code(&req)?, 400);
+        let res = test_serve_request(create_test_buffer(
+            "GET /../../../etc/passwd HTTP/1.1",
+            vec!["User-Agent:rust", "Origin:localhost"],
+        ))?;
+        assert_eq!(get_response_code(&res)?, 400);
 
         Ok(())
     }
 
     #[test]
     fn forbidden_method_is_not_allowed() -> Result<(), ServerError> {
-        let test_server = create_test_server();
-        let req = test_server.serve_request(
-            None,
-            create_test_buffer(
-                "POST / HTTP/1.1",
-                vec!["User-Agent:rust", "Origin:localhost"],
-            ),
-            &mut AppState::default(),
-        )?;
-        assert_eq!(get_response_code(&req)?, 405);
+        let res = test_serve_request(create_test_buffer(
+            "POST / HTTP/1.1",
+            vec!["User-Agent:rust", "Origin:localhost"],
+        ))?;
+        assert_eq!(get_response_code(&res)?, 405);
 
         Ok(())
     }
 
     #[test]
     fn no_crash_on_empty_body() -> Result<(), ServerError> {
-        let test_server = create_test_server();
-        let res = test_server.serve_request(None, Cursor::new([]), &mut AppState::default())?;
+        let res = test_serve_request(Cursor::new([]))?;
         assert_eq!(get_response_code(&res)?, 400);
 
         Ok(())
@@ -141,8 +121,7 @@ mod tests {
 
     #[test]
     fn no_crash_on_bad_unicode() -> Result<(), ServerError> {
-        let test_server = create_test_server();
-        let res = test_server.serve_request(None, Cursor::new([0xc6]), &mut AppState::default())?;
+        let res = test_serve_request(Cursor::new([0xc6]))?;
         assert_eq!(get_response_code(&res)?, 400);
 
         Ok(())
