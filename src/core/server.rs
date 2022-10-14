@@ -1,6 +1,6 @@
 use super::configuration::Configuration;
 use super::socket::{parse_utf8, read_stream};
-use super::uri::URI;
+use super::uri::*;
 use crate::compile_if_eq;
 use crate::error::ServerError;
 use crate::file::{get_file_extension, CachedFile};
@@ -35,7 +35,7 @@ fn server_initializer<F: FnOnce(ThreadPool, TcpListener, AppState) -> Result<(),
     do_initial_tasks(config);
 
     let listener =
-        TcpListener::bind([config.addr, ":", config.port.to_string().as_str()].concat())?;
+        TcpListener::bind(format!("{}:{}", config.addr, config.port))?;
 
     let state = AppState::default();
 
@@ -223,18 +223,12 @@ HEADERS: {:?}
         return final_response.status_code(405).build();
     }
 
-    let mut uri = URI::new();
-
-    uri.find(&buf_utf8);
-
-    let uri_path_ref = uri.get().as_ref();
-
-    let uri_path_ref = match uri_path_ref {
-        Some(path) => path,
+    let urn = match find_urn(&buf_utf8) {
+        Some(urn) => urn,
         None => return final_response.status_code(400).build(),
     };
 
-    let absolute_path = [config.absolute_static_content_path, "/", uri_path_ref].concat();
+    let absolute_path = format!("{}/{urn}", config.absolute_static_content_path);
 
     let path = Path::new(&absolute_path);
 
@@ -252,12 +246,12 @@ HEADERS: {:?}
         }
     }
 
-    let file_ext = get_file_extension(uri_path_ref.as_str());
+    let file_ext = get_file_extension(&urn);
 
     if config.cache_files {
         match &mut state.cached_files {
                 Some(ref mut cached_files) => {
-                    if let Some(cached_file) = cached_files.get(uri_path_ref.as_str()) {
+                    if let Some(cached_file) = cached_files.get(&urn) {
                         return final_response
                             .response_type(
                                 ResponseType::File(
@@ -271,7 +265,7 @@ HEADERS: {:?}
                     }
                     else {
                         let requested_file =
-                            fs::File::open([config.absolute_static_content_path, "/", uri_path_ref].concat());
+                            fs::File::open(format!("{}/{}", config.absolute_static_content_path, &urn));
 
                         let mut requested_file = match requested_file {
                             Ok(file) => file,
@@ -287,7 +281,7 @@ HEADERS: {:?}
                             )));
                         }
 
-                        cached_files.insert(uri_path_ref.clone(), CachedFile {
+                        cached_files.insert(urn.to_string(), CachedFile {
                             extension: file_ext.to_string(),
                             content: requested_content.clone(),
                         });
@@ -302,7 +296,6 @@ HEADERS: {:?}
                                 )
                             )
                             .build()
-
                     }
                 },
                 None => return Err(ServerError::from(io::Error::new(io::ErrorKind::Other, "State is a None value even though 'cache_files' configuration is set to true. This should never occur, this is probably a bug.")))
@@ -310,7 +303,7 @@ HEADERS: {:?}
     }
 
     let requested_file =
-        fs::File::open([config.absolute_static_content_path, "/", uri_path_ref].concat());
+        fs::File::open(format!("{}/{urn}", config.absolute_static_content_path));
 
     let mut requested_file = match requested_file {
         Ok(file) => file,
@@ -319,7 +312,7 @@ HEADERS: {:?}
 
     let mut requested_content = String::new();
 
-    if let Err(_) = requested_file.read_to_string(&mut requested_content) {
+    if requested_file.read_to_string(&mut requested_content).is_err() {
         return Err(ServerError::IOError(io::Error::new(
             io::ErrorKind::InvalidData,
             "File is not valid UTF-8 data.",
