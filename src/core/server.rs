@@ -1,10 +1,11 @@
 use super::configuration::Configuration;
+use crate::response::response_builder::ResponseBuilder;
 use super::socket::{parse_utf8, read_stream};
 use super::uri::*;
 use crate::compile_if_eq;
 use crate::error::ServerError;
 use crate::file::{get_file_extension, CachedFile};
-use crate::response::{final_response::FinalResponse, types::*};
+use crate::response::types::*;
 use crate::state::AppState;
 use crate::thread::ThreadPool;
 use crate::time::generate_unixtime;
@@ -142,7 +143,7 @@ pub fn serve_request(
     input: impl Read,
     state: &mut AppState,
 ) -> Result<String, ServerError> {
-    let final_response = FinalResponse {
+    let res = ResponseBuilder { 
         status_code: 200,
         req_headers: None,
         response_type: None,
@@ -150,12 +151,12 @@ pub fn serve_request(
     };
 
     // Default to fallback response since it's the most common.
-    let final_response = final_response.response_type(ResponseType::Fallback);
+    let res = res.response_type(ResponseType::Fallback);
 
     let (mut req_headers, buf) = match read_stream(input) {
         Ok((headers, buf)) => (headers, buf),
         Err(status) => {
-            return final_response
+            return res
                 .req_headers(HashMap::new())
                 .status_code(status)
                 .build();
@@ -205,27 +206,27 @@ HEADERS: {:?}
             for (key, val) in headers {
                 req_headers.insert(key.to_string(), val.to_string());
             }
-            return final_response
+            return res
                 .req_headers(req_headers)
                 .status_code(status)
                 .build();
         }
     };
 
-    let final_response = final_response.req_headers(req_headers);
+    let res = res.req_headers(req_headers);
 
     let req_method = match buf_utf8.split_whitespace().next() {
         Some(req_method) => req_method,
-        None => return final_response.status_code(500).build(),
+        None => return res.status_code(500).build(),
     };
 
     if !config.allowed_methods.contains(req_method) {
-        return final_response.status_code(405).build();
+        return res.status_code(405).build();
     }
 
     let urn = match find_urn(&buf_utf8) {
         Some(urn) => urn,
-        None => return final_response.status_code(400).build(),
+        None => return res.status_code(400).build(),
     };
 
     let absolute_path = format!("{}/{urn}", config.absolute_static_content_path);
@@ -236,13 +237,13 @@ HEADERS: {:?}
         if config.allow_directory_listing {
             let path_iterator = match path.read_dir() {
                 Ok(iter) => iter,
-                Err(_) => return final_response.status_code(500).build(),
+                Err(_) => return res.status_code(500).build(),
             };
-            return final_response
+            return res
                 .response_type(ResponseType::Dir(DirResponse { path_iterator }))
                 .build();
         } else {
-            return final_response.status_code(404).build();
+            return res.status_code(404).build();
         }
     }
 
@@ -252,7 +253,7 @@ HEADERS: {:?}
         match &mut state.cached_files {
                 Some(ref mut cached_files) => {
                     if let Some(cached_file) = cached_files.get(&urn) {
-                        return final_response
+                        return res
                             .response_type(
                                 ResponseType::File(
                                     FileResponse {
@@ -269,7 +270,7 @@ HEADERS: {:?}
 
                         let mut requested_file = match requested_file {
                             Ok(file) => file,
-                            Err(_err) => return final_response.status_code(404).build()
+                            Err(_err) => return res.status_code(404).build()
                         };
 
                         let mut requested_content = String::new();
@@ -286,7 +287,7 @@ HEADERS: {:?}
                             content: requested_content.clone(),
                         });
 
-                        return final_response
+                        return res
                             .response_type(
                                 ResponseType::File(
                                     FileResponse {
@@ -307,7 +308,7 @@ HEADERS: {:?}
 
     let mut requested_file = match requested_file {
         Ok(file) => file,
-        Err(_err) => return final_response.status_code(404).build(),
+        Err(_err) => return res.status_code(404).build(),
     };
 
     let mut requested_content = String::new();
@@ -319,7 +320,7 @@ HEADERS: {:?}
         )));
     }
 
-    final_response
+    res
         .response_type(ResponseType::File(FileResponse {
             file_ext,
             file_content: requested_content.as_str(),

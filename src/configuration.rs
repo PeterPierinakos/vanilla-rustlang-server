@@ -53,10 +53,9 @@ pub const USE_TIME_HEADER: bool = true;
 pub const ALLOW_IFRAMES: bool = false;
 
 pub const APPEND_EXTRA_HEADERS: bool = true;
-pub const EXTRA_HEADERS_SIZE: usize = 0;
 /* Production note: "EXTRA_HEADERS_SIZE" should be used to change the number of extra headers for
  * convenience. */
 // Example: ["ServerHost", "VanillaRustlangServer"]
-pub const EXTRA_HEADERS: [[&str; 2]; EXTRA_HEADERS_SIZE] = [];
+pub const EXTRA_HEADERS: [(&str, &str); 0] = [];
 
 /* End of headers configuration */

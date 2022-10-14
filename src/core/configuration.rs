@@ -18,7 +18,7 @@ pub struct Configuration<'a> {
     pub use_time_header: bool,
     pub allow_iframes: bool,
     pub append_extra_headers: bool,
-    pub extra_headers: Vec<[&'a str; 2]>,
+    pub extra_headers: Vec<(&'a str, &'a str)>,
     pub allow_directory_listing: bool,
     pub cache_files: bool,
     pub format_directory_listing_as_json: bool,
