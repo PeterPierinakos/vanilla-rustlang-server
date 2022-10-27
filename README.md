@@ -8,8 +8,9 @@ VRS is a simple, minimal, free and open source static web server written in Rust
 
 ### VRS features
 
+- ~1k SLOC; minimal
 - Standalone, small and statically-linked binary after compilation with all of its configuration done at compile-time
-- Easy-to-understand documentation & manual
+- Easy-to-understand usage and configuration instructions
 - Multithreading
 - Singlethreading
 - CORS (methods only, origins soon)
